@@ -19,7 +19,6 @@ import copy
 import datetime as dt
 import html
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -34,6 +33,8 @@ ITEM_TYPE_LOGIN = 1
 URI_MATCH_DOMAIN = 0
 WEB_SCHEMES = {"http", "https"}
 NOTES_SEPARATOR = "\n\n----\n\n"
+STATUS_PLANNED = "planned"
+STATUS_OK = "ok"
 
 # Bundled Public Suffix List snapshot only: no network access besides bw itself.
 _extractor = tldextract.TLDExtract(suffix_list_urls=(), include_psl_private_domains=True, cache_dir=None)
@@ -135,7 +136,7 @@ class Merge:
     duplicates: list[Login]
     payload: dict
     changes: list[str]
-    status: str = "prévu"
+    status: str = STATUS_PLANNED
     deleted_ids: list[str] = field(default_factory=list)
 
 
@@ -144,7 +145,7 @@ class Rename:
     item: Login
     new_name: str
     payload: dict
-    status: str = "prévu"
+    status: str = STATUS_PLANNED
 
 
 @dataclass
@@ -181,7 +182,7 @@ def merge_payload(master: Login, others: list[Login], domain: str, new_name: str
     changes: list[str] = []
 
     if payload.get("name") != new_name:
-        changes.append(f"nom : « {master.name} » devient « {new_name} »")
+        changes.append(f"name: \"{master.name}\" becomes \"{new_name}\"")
         payload["name"] = new_name
 
     all_schemes = set().union(*(g.schemes for g in group))
@@ -195,14 +196,14 @@ def merge_payload(master: Login, others: list[Login], domain: str, new_name: str
                 seen_other.add(key)
                 new_uris.append({"match": uri.get("match"), "uri": key})
     old_count = sum(len(g.web_uris) + len(g.other_uris) for g in group)
-    changes.append(f"URIs : {old_count} au total remplacées par {len(new_uris)} "
-                   f"({scheme}://{domain} en détection « domaine de base »)")
+    changes.append(f"URIs: {old_count} in total replaced by {len(new_uris)} "
+                   f"({scheme}://{domain} with \"base domain\" match detection)")
     login["uris"] = new_uris
 
     totp = next((g.totp for g in group if g.totp), "")
     if totp and not master.totp:
         login["totp"] = totp
-        changes.append("clé TOTP récupérée depuis un doublon")
+        changes.append("TOTP key taken from a duplicate")
 
     notes = []
     for g in group:
@@ -211,7 +212,7 @@ def merge_payload(master: Login, others: list[Login], domain: str, new_name: str
             notes.append(text)
     if len(notes) > 1 or (notes and not (master.raw.get("notes") or "").strip()):
         payload["notes"] = NOTES_SEPARATOR.join(notes)
-        changes.append(f"notes fusionnées ({len(notes)} notes distinctes)")
+        changes.append(f"notes merged ({len(notes)} distinct notes)")
 
     fields = list(payload.get("fields") or [])
     field_keys = {(f.get("name"), f.get("value"), f.get("type")) for f in fields}
@@ -222,25 +223,25 @@ def merge_payload(master: Login, others: list[Login], domain: str, new_name: str
             if key not in field_keys:
                 field_keys.add(key)
                 fields.append(f)
-                added.append(f.get("name") or "(sans nom)")
+                added.append(f.get("name") or "(unnamed)")
     if added:
         payload["fields"] = fields
-        changes.append(f"{len(added)} champ(s) perso ajouté(s) : {', '.join(added)}")
+        changes.append(f"{len(added)} custom field(s) added: {', '.join(added)}")
 
     if not payload.get("favorite") and any(g.raw.get("favorite") for g in others):
         payload["favorite"] = True
-        changes.append("marqué favori")
+        changes.append("marked as favorite")
 
     if not payload.get("folderId"):
         folder = next((g.raw.get("folderId") for g in others if g.raw.get("folderId")), None)
         if folder:
             payload["folderId"] = folder
-            changes.append("dossier repris d'un doublon")
+            changes.append("folder taken from a duplicate")
 
     reprompt = max(int(g.raw.get("reprompt") or 0) for g in group)
     if reprompt != int(payload.get("reprompt") or 0):
         payload["reprompt"] = reprompt
-        changes.append("re-demande du mot de passe maître activée")
+        changes.append("master password re-prompt enabled")
 
     return payload, changes
 
@@ -252,7 +253,7 @@ def build_plan(items: list[dict], rename_all: bool) -> Plan:
         if raw.get("type") != ITEM_TYPE_LOGIN or raw.get("deletedDate"):
             continue
         if raw.get("organizationId"):
-            plan.ignored["élément d'organisation"] += 1
+            plan.ignored["organization item"] += 1
             continue
         logins.append(parse_login(raw))
     plan.total_logins = len(logins)
@@ -261,13 +262,12 @@ def build_plan(items: list[dict], rename_all: bool) -> Plan:
     for item in logins:
         if len(item.domains) > 1:
             plan.skipped.append(Issue(", ".join(sorted(item.domains)), item.username,
-                                      "plusieurs domaines dans un même élément", [(item, "")]))
+                                      "several domains in a single item", [(item, "")]))
         elif item.domain:
             groups[(item.domain, item.user_key)].append(item)
         else:
-            plan.ignored["sans URI web exploitable (app, IP, localhost, vide)"] += 1
+            plan.ignored["no usable web URI (app, IP, localhost, empty)"] += 1
 
-    candidates: list[tuple[str, Login, list[Login]]] = []
     blocked_ids: set[str] = set()
     for (domain, _), members in sorted(groups.items()):
         if len(members) < 2:
@@ -280,36 +280,34 @@ def build_plan(items: list[dict], rename_all: bool) -> Plan:
             by_password[m.password].append(m)
         if len(by_password) > 1:
             labels = {pwd: letter(i) for i, pwd in enumerate(by_password)}
-            tagged = [(m, f"mdp {labels[m.password]}") for m in members]
-            plan.conflicts.append(Issue(domain, username, f"{len(by_password)} mots de passe différents", tagged))
+            tagged = [(m, f"password {labels[m.password]}") for m in members]
+            plan.conflicts.append(Issue(domain, username, f"{len(by_password)} different passwords", tagged))
             blocked_ids.update(m.id for m in members)
             continue
 
         totps = {m.totp for m in members if m.totp}
         if len(totps) > 1:
             labels = {t: letter(i) for i, t in enumerate(totps)}
-            tagged = [(m, f"TOTP {labels[m.totp]}" if m.totp else "pas de TOTP") for m in members]
-            plan.conflicts.append(Issue(domain, username, f"{len(totps)} clés TOTP différentes", tagged))
+            tagged = [(m, f"TOTP {labels[m.totp]}" if m.totp else "no TOTP") for m in members]
+            plan.conflicts.append(Issue(domain, username, f"{len(totps)} different TOTP keys", tagged))
             blocked_ids.update(m.id for m in members)
             continue
 
         if any(m.has_passkey for m in members):
-            plan.skipped.append(Issue(domain, username, "passkey présente : fusion manuelle conseillée",
+            plan.skipped.append(Issue(domain, username, "passkey present: merge manually",
                                       [(m, "passkey" if m.has_passkey else "") for m in members]))
             blocked_ids.update(m.id for m in members)
             continue
 
         with_files = [m for m in members if m.has_attachments]
         if len(with_files) > 1:
-            plan.skipped.append(Issue(domain, username, "pièces jointes sur plusieurs éléments",
-                                      [(m, "pièces jointes" if m.has_attachments else "") for m in members]))
+            plan.skipped.append(Issue(domain, username, "attachments on several items",
+                                      [(m, "attachments" if m.has_attachments else "") for m in members]))
             blocked_ids.update(m.id for m in members)
             continue
 
         master = with_files[0] if with_files else members[0]
-        candidates.append((domain, master, [m for m in members if m is not master]))
-
-    for domain, master, dups in candidates:
+        dups = [m for m in members if m is not master]
         payload, changes = merge_payload(master, dups, domain, domain)
         plan.merges.append(Merge(domain, master, dups, payload, changes))
 
@@ -319,11 +317,10 @@ def build_plan(items: list[dict], rename_all: bool) -> Plan:
         for s in logins:
             if not s.domain or s.id in deleted_ids or s.id in merged_ids or s.id in blocked_ids:
                 continue
-            new_name = s.domain
-            if s.name != new_name:
+            if s.name != s.domain:
                 payload = copy.deepcopy(s.raw)
-                payload["name"] = new_name
-                plan.renames.append(Rename(s, new_name, payload))
+                payload["name"] = s.domain
+                plan.renames.append(Rename(s, s.domain, payload))
     return plan
 
 
@@ -340,7 +337,7 @@ class Bw:
                               text=True, encoding="utf-8")
         if proc.returncode != 0:
             # Only the command verb and bw's own error are reported, never the payload.
-            raise BwError(f"bw {' '.join(args[:3])} : {proc.stderr.strip()[:300] or 'échec'}")
+            raise BwError(f"bw {' '.join(args[:3])}: {proc.stderr.strip()[:300] or 'failed'}")
         return proc.stdout
 
     def status(self) -> str:
@@ -363,7 +360,7 @@ class Bw:
         # Interactive on purpose: some bw versions ask for the master password here.
         proc = subprocess.run([self.exe, "export", "--format", "encrypted_json", "--output", str(path)])
         if proc.returncode != 0 or not path.exists():
-            raise BwError("bw export : échec de la sauvegarde chiffrée")
+            raise BwError("bw export: encrypted backup failed")
 
 
 def apply_plan(bw: Bw, plan: Plan) -> None:
@@ -371,11 +368,11 @@ def apply_plan(bw: Bw, plan: Plan) -> None:
     done = 0
     for merge in plan.merges:
         done += 1
-        print(f"  [{done}/{total}] fusion {merge.domain}", flush=True)
+        print(f"  [{done}/{total}] merge {merge.domain}", flush=True)
         try:
             bw.edit_item(merge.master.id, merge.payload)
         except BwError as err:
-            merge.status = f"échec édition, rien supprimé ({err})"
+            merge.status = f"edit failed, nothing deleted ({err})"
             continue
         errors = []
         for dup in merge.duplicates:
@@ -384,15 +381,15 @@ def apply_plan(bw: Bw, plan: Plan) -> None:
                 merge.deleted_ids.append(dup.id)
             except BwError as err:
                 errors.append(str(err))
-        merge.status = "ok" if not errors else f"partiel : {'; '.join(errors)}"
+        merge.status = STATUS_OK if not errors else f"partial: {'; '.join(errors)}"
     for rename in plan.renames:
         done += 1
-        print(f"  [{done}/{total}] renommage {rename.new_name}", flush=True)
+        print(f"  [{done}/{total}] rename {rename.new_name}", flush=True)
         try:
             bw.edit_item(rename.item.id, rename.payload)
-            rename.status = "ok"
+            rename.status = STATUS_OK
         except BwError as err:
-            rename.status = f"échec ({err})"
+            rename.status = f"failed ({err})"
 
 
 def mask_username(value: str) -> str:
@@ -408,17 +405,17 @@ def render_report(plan: Plan, mode: str, started: dt.datetime, backup: Path | No
     applied = mode == "apply"
 
     def status_cell(status: str) -> str:
-        cls = "ok" if status == "ok" else ("todo" if status == "prévu" else "err")
+        cls = "ok" if status == STATUS_OK else ("todo" if status == STATUS_PLANNED else "err")
         return f'<span class="st {cls}">{e(status)}</span>'
 
     edited = len(plan.merges) + len(plan.renames)
     deleted = sum(len(m.deleted_ids) for m in plan.merges) if applied else plan.deletions
-    failures = [m for m in plan.merges if m.status not in ("ok", "prévu")] + \
-               [r for r in plan.renames if r.status not in ("ok", "prévu")]
+    failures = [m for m in plan.merges if m.status not in (STATUS_OK, STATUS_PLANNED)] + \
+               [r for r in plan.renames if r.status not in (STATUS_OK, STATUS_PLANNED)]
     after = plan.total_logins - deleted
 
-    out = [f"""<!doctype html><html lang="fr"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapport bw-dedupe</title>
+    out = [f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>bw-dedupe report</title>
 <style>
 :root{{--bg:#fafafa;--fg:#1d1d1f;--muted:#6b6b70;--card:#fff;--line:#e3e3e6;--ok:#1f7a3a;--warn:#9a5b00;--err:#b42318;--accent:#175cd3}}
 @media (prefers-color-scheme:dark){{:root{{--bg:#151517;--fg:#ececee;--muted:#9a9aa0;--card:#1e1e21;--line:#2e2e33;--ok:#5cc27a;--warn:#e0a040;--err:#f07068;--accent:#7aa7ff}}}}
@@ -434,50 +431,50 @@ summary{{cursor:pointer}} table{{border-collapse:collapse;width:100%;margin:6px 
 .st{{font-size:12px;padding:1px 6px;border-radius:4px;border:1px solid currentColor}} .st.ok{{color:var(--ok)}} .st.todo{{color:var(--muted)}} .st.err{{color:var(--err)}}
 pre{{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto}}
 </style></head><body><main>
-<h1>Rapport bw-dedupe</h1>
-<div class="muted">{e(started.strftime('%Y-%m-%d %H:%M:%S'))} · mode <b>{'APPLIQUÉ' if applied else 'SIMULATION (aucune modification)'}</b></div>
-<div class="banner">Ce rapport ne contient aucun mot de passe, clé TOTP, valeur de champ ou contenu de note.
-{'Sauvegarde chiffrée : <code>' + e(str(backup)) + '</code>.' if backup else ''}
-Les éléments supprimés restent 30 jours dans la corbeille Bitwarden.</div>
-<h2>Impact sur le coffre</h2>
+<h1>bw-dedupe report</h1>
+<div class="muted">{e(started.strftime('%Y-%m-%d %H:%M:%S'))} · mode <b>{'APPLIED' if applied else 'PREVIEW (no changes made)'}</b></div>
+<div class="banner">This report contains no password, TOTP key, custom field value or note content.
+{'Encrypted backup: <code>' + e(str(backup)) + '</code>.' if backup else ''}
+Deleted items stay in the Bitwarden trash for 30 days.</div>
+<h2>Vault impact</h2>
 <div class="grid">
-<div class="kpi"><span class="muted">Logins avant</span><b>{plan.total_logins}</b></div>
-<div class="kpi"><span class="muted">Logins après</span><b>{after}</b></div>
-<div class="kpi del"><span class="muted">{'Supprimés' if applied else 'À supprimer'} (corbeille)</span><b>{deleted}</b></div>
-<div class="kpi mod"><span class="muted">{'Modifiés' if applied else 'À modifier'}</span><b>{edited}</b></div>
-<div class="kpi warn"><span class="muted">Conflits à vérifier</span><b>{len(plan.conflicts)}</b></div>
-<div class="kpi warn"><span class="muted">Ignorés (fusion manuelle)</span><b>{len(plan.skipped)}</b></div>
-{f'<div class="kpi del"><span class="muted">Échecs</span><b>{len(failures)}</b></div>' if applied else ''}
+<div class="kpi"><span class="muted">Logins before</span><b>{plan.total_logins}</b></div>
+<div class="kpi"><span class="muted">Logins after</span><b>{after}</b></div>
+<div class="kpi del"><span class="muted">{'Deleted' if applied else 'To delete'} (trash)</span><b>{deleted}</b></div>
+<div class="kpi mod"><span class="muted">{'Modified' if applied else 'To modify'}</span><b>{edited}</b></div>
+<div class="kpi warn"><span class="muted">Conflicts to review</span><b>{len(plan.conflicts)}</b></div>
+<div class="kpi warn"><span class="muted">Skipped (manual merge)</span><b>{len(plan.skipped)}</b></div>
+{f'<div class="kpi del"><span class="muted">Failures</span><b>{len(failures)}</b></div>' if applied else ''}
 </div>"""]
     if plan.ignored:
-        out.append("<p class='muted'>Non traités : " +
-                   ", ".join(f"{e(k)} : {v}" for k, v in plan.ignored.items()) + "</p>")
+        out.append("<p class='muted'>Not processed: " +
+                   ", ".join(f"{e(k)}: {v}" for k, v in plan.ignored.items()) + "</p>")
 
-    out.append(f"<h2>Fusions ({len(plan.merges)})</h2>")
+    out.append(f"<h2>Merges ({len(plan.merges)})</h2>")
     for m in plan.merges:
-        rows = [f"<tr><td class='keep'>conservé</td><td>{e(m.master.name)}</td><td>{user(m.master.username)}</td>"
+        rows = [f"<tr><td class='keep'>kept</td><td>{e(m.master.name)}</td><td>{user(m.master.username)}</td>"
                 f"<td>{e(m.master.revision[:19])}</td><td>{'<br>'.join(e(u) for u in m.master.web_uris)}</td>"
                 f"<td><code>{e(m.master.id)}</code></td></tr>"]
         for d in m.duplicates:
-            rows.append(f"<tr><td class='drop'>supprimé</td><td>{e(d.name)}</td><td>{user(d.username)}</td>"
+            rows.append(f"<tr><td class='drop'>deleted</td><td>{e(d.name)}</td><td>{user(d.username)}</td>"
                         f"<td>{e(d.revision[:19])}</td><td>{'<br>'.join(e(u) for u in d.web_uris)}</td>"
                         f"<td><code>{e(d.id)}</code></td></tr>")
-        out.append(f"""<details><summary><b>{e(m.payload['name'])}</b> · {len(m.duplicates) + 1} éléments
-fusionnés en 1 · {status_cell(m.status)}</summary>
-<table><tr><th></th><th>Nom</th><th>Identifiant</th><th>Modifié le</th><th>URIs</th><th>ID</th></tr>{''.join(rows)}</table>
-<div>Changements sur l'élément conservé :<ul>{''.join(f'<li>{e(c)}</li>' for c in m.changes)}</ul></div></details>""")
+        out.append(f"""<details><summary><b>{e(m.payload['name'])}</b> · {len(m.duplicates) + 1} items
+merged into 1 · {status_cell(m.status)}</summary>
+<table><tr><th></th><th>Name</th><th>Username</th><th>Modified</th><th>URIs</th><th>ID</th></tr>{''.join(rows)}</table>
+<div>Changes to the kept item:<ul>{''.join(f'<li>{e(c)}</li>' for c in m.changes)}</ul></div></details>""")
 
     if plan.renames:
-        out.append(f"<h2>Renommages seuls ({len(plan.renames)})</h2><table><tr><th>Avant</th><th>Après</th><th>Statut</th></tr>")
+        out.append(f"<h2>Renames only ({len(plan.renames)})</h2><table><tr><th>Before</th><th>After</th><th>Status</th></tr>")
         for r in plan.renames:
             out.append(f"<tr><td>{e(r.item.name)}</td><td>{e(r.new_name)}</td><td>{status_cell(r.status)}</td></tr>")
         out.append("</table>")
 
     for title, issues, hint in (
-        ("Conflits : non modifiés, à vérifier à la main", plan.conflicts,
-         "Même domaine et même identifiant, mais secrets différents. Les lettres indiquent quels éléments partagent "
-         "le même secret, sans le révéler. Le plus récent est en tête."),
-        ("Ignorés : non modifiés", plan.skipped, "")):
+        ("Conflicts: unchanged, review manually", plan.conflicts,
+         "Same domain and username, but different secrets. Letters show which items share the same secret "
+         "without revealing it. Most recent first."),
+        ("Skipped: unchanged", plan.skipped, "")):
         out.append(f"<h2>{e(title)} ({len(issues)})</h2>")
         if hint and issues:
             out.append(f"<p class='muted'>{e(hint)}</p>")
@@ -486,14 +483,14 @@ fusionnés en 1 · {status_cell(m.status)}</summary>
                 f"<tr><td>{e(tag)}</td><td>{e(i.name)}</td><td>{user(i.username)}</td><td>{e(i.revision[:19])}</td>"
                 f"<td>{'<br>'.join(e(u) for u in i.web_uris)}</td><td><code>{e(i.id)}</code></td></tr>"
                 for i, tag in issue.items)
-            out.append(f"<details><summary><b>{e(issue.domain)}</b> · {user(issue.username) or '(sans identifiant)'} · "
-                       f"{e(issue.reason)}</summary><table><tr><th></th><th>Nom</th><th>Identifiant</th>"
-                       f"<th>Modifié le</th><th>URIs</th><th>ID</th></tr>{rows}</table></details>")
+            out.append(f"<details><summary><b>{e(issue.domain)}</b> · {user(issue.username) or '(no username)'} · "
+                       f"{e(issue.reason)}</summary><table><tr><th></th><th>Name</th><th>Username</th>"
+                       f"<th>Modified</th><th>URIs</th><th>ID</th></tr>{rows}</table></details>")
 
     restored = [i for m in plan.merges for i in m.deleted_ids]
     if restored:
-        out.append("<h2>Annuler les suppressions</h2><p class='muted'>Restaure les doublons depuis la corbeille "
-                   "(les éléments conservés gardent leurs modifications ; la sauvegarde chiffrée permet un retour complet).</p><pre>")
+        out.append("<h2>Undo deletions</h2><p class='muted'>Restores the duplicates from the trash "
+                   "(kept items keep their changes; the encrypted backup allows a full rollback).</p><pre>")
         out.append("\n".join(f"bw restore item {e(i)}" for i in restored))
         out.append("</pre>")
     out.append("</main></body></html>")
@@ -501,18 +498,19 @@ fusionnés en 1 · {status_cell(m.status)}</summary>
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Fusionne les logins Bitwarden dupliqués (même domaine, identifiant et mot de passe).")
-    parser.add_argument("--apply", action="store_true", help="applique les changements (sinon simulation)")
-    parser.add_argument("--yes", action="store_true", help="ne demande pas de confirmation avec --apply")
-    parser.add_argument("--no-backup", action="store_true", help="saute l'export chiffré avant --apply")
-    parser.add_argument("--rename-all", action="store_true", help="renomme aussi les logins non dupliqués d'après leur domaine")
-    parser.add_argument("--mask-usernames", action="store_true", help="masque les identifiants dans le rapport")
-    parser.add_argument("--report", type=Path, help="chemin du rapport HTML")
-    parser.add_argument("--bw", default=shutil.which("bw"), help="chemin de l'exécutable bw")
+    parser = argparse.ArgumentParser(
+        description="Merge duplicate Bitwarden logins (same registrable domain, username and password).")
+    parser.add_argument("--apply", action="store_true", help="apply the changes after preview and confirmation")
+    parser.add_argument("--yes", action="store_true", help="skip the confirmation prompt with --apply")
+    parser.add_argument("--no-backup", action="store_true", help="skip the encrypted export before --apply")
+    parser.add_argument("--rename-all", action="store_true", help="also rename non-duplicated logins after their domain")
+    parser.add_argument("--mask-usernames", action="store_true", help="mask usernames in the report")
+    parser.add_argument("--report", type=Path, help="path of the HTML report")
+    parser.add_argument("--bw", default=shutil.which("bw"), help="path of the bw executable")
     args = parser.parse_args()
 
     if not args.bw:
-        print("bw introuvable dans le PATH. Installe la CLI Bitwarden ou passe --bw.", file=sys.stderr)
+        print("bw not found in PATH. Install the Bitwarden CLI or pass --bw.", file=sys.stderr)
         return 2
     bw = Bw(args.bw)
     started = dt.datetime.now()
@@ -522,7 +520,7 @@ def main() -> int:
     try:
         status = bw.status()
         if status != "unlocked":
-            print(f"Coffre {status}. Lance `bw login` puis `bw unlock` et exporte BW_SESSION.", file=sys.stderr)
+            print(f"Vault is {status}. Run `bw login`, then `bw unlock` and export BW_SESSION.", file=sys.stderr)
             return 2
         bw.sync()
         plan = build_plan(bw.list_items(), args.rename_all)
@@ -530,38 +528,37 @@ def main() -> int:
         print(err, file=sys.stderr)
         return 1
 
-    print(f"Logins : {plan.total_logins} · fusions : {len(plan.merges)} · suppressions : {plan.deletions} · "
-          f"renommages seuls : {len(plan.renames)} · conflits : {len(plan.conflicts)} · ignorés : {len(plan.skipped)}")
+    print(f"Logins: {plan.total_logins} · merges: {len(plan.merges)} · deletions: {plan.deletions} · "
+          f"renames only: {len(plan.renames)} · conflicts: {len(plan.conflicts)} · skipped: {len(plan.skipped)}")
 
     mode = "dry-run"
     backup = None
     if args.apply and (plan.merges or plan.renames):
-        preview_path = report_path.with_name(report_path.stem + "-apercu.html")
+        preview_path = report_path.with_name(report_path.stem + "-preview.html")
         preview_path.write_text(render_report(plan, mode, started, None, args.mask_usernames), encoding="utf-8")
-        print(f"Aperçu des changements : {preview_path.resolve()}")
-        if not args.yes and input("Relis l'aperçu, puis tape « oui » pour appliquer ce plan : ").strip().lower() != "oui":
-            print("Annulé, aucune modification.")
+        print(f"Preview of the changes: {preview_path.resolve()}")
+        if not args.yes and input("Review the preview, then type \"yes\" to apply this plan: ").strip().lower() != "yes":
+            print("Cancelled, nothing changed.")
             return 0
-        else:
-            mode = "apply"
-            try:
-                if not args.no_backup:
-                    backup = Path(f"bw-backup-{stamp}.json")
-                    print(f"Sauvegarde chiffrée vers {backup}")
-                    bw.export_backup(backup)
-                apply_plan(bw, plan)
-            except BwError as err:
-                print(err, file=sys.stderr)
-                return 1
-            except KeyboardInterrupt:
-                print("\nInterrompu : le rapport liste ce qui a été fait.", file=sys.stderr)
-            finally:
-                report_path.write_text(render_report(plan, mode, started, backup, args.mask_usernames), encoding="utf-8")
-                print(f"Rapport : {report_path.resolve()}")
-            return 0
+        mode = "apply"
+        try:
+            if not args.no_backup:
+                backup = Path(f"bw-backup-{stamp}.json")
+                print(f"Encrypted backup to {backup}")
+                bw.export_backup(backup)
+            apply_plan(bw, plan)
+        except BwError as err:
+            print(err, file=sys.stderr)
+            return 1
+        except KeyboardInterrupt:
+            print("\nInterrupted: the report lists what was done.", file=sys.stderr)
+        finally:
+            report_path.write_text(render_report(plan, mode, started, backup, args.mask_usernames), encoding="utf-8")
+            print(f"Report: {report_path.resolve()}")
+        return 0
 
     report_path.write_text(render_report(plan, mode, started, backup, args.mask_usernames), encoding="utf-8")
-    print(f"Rapport : {report_path.resolve()}")
+    print(f"Report: {report_path.resolve()}")
     return 0
 
 

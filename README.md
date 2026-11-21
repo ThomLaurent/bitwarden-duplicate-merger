@@ -1,106 +1,106 @@
-# bw-dedupe
+# bitwarden-duplicate-merger
 
-Fusionne les logins Bitwarden en double : même domaine, même identifiant et même mot de passe, mais un sous-domaine ou une URL différente.
+Merges duplicate Bitwarden logins: same domain, same username and same password, but a different subdomain or URL.
 
-Le script passe par la CLI officielle `bw` et modifie le coffre sur place. Les IDs, pièces jointes, passkeys et l'historique restent intacts.
+The script uses the official `bw` CLI and edits the vault in place. Item IDs, attachments, passkeys and history are preserved.
 
-## Confidentialité
+## Privacy
 
-- Mots de passe, clés TOTP, valeurs des champs perso et contenu des notes sont seulement comparés en mémoire. Ils ne sont jamais affichés, journalisés ni écrits dans le rapport.
-- Les éléments modifiés sont transmis à `bw` par l'entrée standard, jamais en argument de ligne de commande.
-- Le script n'accède pas au réseau, à part via `bw`. La Public Suffix List utilisée est celle embarquée dans `tldextract`.
-- Les rapports HTML contiennent les noms, identifiants, URIs et IDs des éléments. Garde-les en local. `--mask-usernames` masque les identifiants.
+- Passwords, TOTP keys, custom field values and note contents are only compared in memory. They are never printed, logged or written to the report.
+- Modified items are sent to `bw` through standard input, never as command-line arguments.
+- The script makes no network access other than through `bw`. It uses the Public Suffix List bundled with `tldextract`.
+- The HTML reports contain item names, usernames, URIs and IDs. Keep them local. `--mask-usernames` masks usernames.
 
-## Prérequis
+## Requirements
 
-- [Bitwarden CLI](https://bitwarden.com/help/cli/) (`bw`) dans le PATH, ou son chemin passé avec `--bw`.
-- [uv](https://docs.astral.sh/uv/) : il installe `tldextract` tout seul au premier lancement.
-  Sans uv : Python 3.10+ et `pip install tldextract`, puis `python bw_dedupe.py` à la place de `uv run bw_dedupe.py`.
+- [Bitwarden CLI](https://bitwarden.com/help/cli/) (`bw`) in the PATH, or its path passed with `--bw`.
+- [uv](https://docs.astral.sh/uv/): it installs `tldextract` automatically on first run.
+  Without uv: Python 3.10+ and `pip install tldextract`, then `python bw_dedupe.py` instead of `uv run bw_dedupe.py`.
 
-## Utilisation
+## Usage
 
-1. Se connecter et déverrouiller le coffre.
+1. Log in and unlock the vault.
 
-   PowerShell :
+   PowerShell:
    ```powershell
    bw login
    $env:BW_SESSION = bw unlock --raw
    ```
-   Bash :
+   Bash:
    ```bash
    bw login
    export BW_SESSION="$(bw unlock --raw)"
    ```
 
-2. Simulation : génère un rapport, sans rien modifier.
+2. Dry run: generates a report without changing anything.
    ```bash
    uv run bw_dedupe.py
    ```
 
-3. Application :
+3. Apply:
    ```bash
    uv run bw_dedupe.py --apply
    ```
-   Le script :
-   1. écrit l'aperçu `bw-dedupe-report-<date>-apercu.html` ;
-   2. attend que tu tapes `oui` (toute autre réponse annule sans rien toucher) ;
-   3. fait une sauvegarde chiffrée `bw-backup-<date>.json` ;
-   4. applique exactement le plan de l'aperçu ;
-   5. écrit `bw-dedupe-report-<date>.html` avec le statut de chaque changement.
+   The script:
+   1. writes the preview `bw-dedupe-report-<date>-preview.html`;
+   2. waits for you to type `yes` (any other answer cancels without touching anything);
+   3. makes an encrypted backup `bw-backup-<date>.json`;
+   4. applies exactly the plan shown in the preview;
+   5. writes `bw-dedupe-report-<date>.html` with the status of each change.
 
-4. Verrouiller le coffre une fois terminé :
+4. Lock the vault when done:
    ```bash
    bw lock
    ```
 
 ### Options
 
-| Option | Effet |
+| Option | Effect |
 |---|---|
-| `--apply` | Applique les changements après aperçu et confirmation. Sans elle, le script fait une simulation. |
-| `--yes` | Saute la confirmation. À éviter au premier passage. |
-| `--no-backup` | Ne fait pas la sauvegarde chiffrée avant d'appliquer. |
-| `--rename-all` | Renomme aussi les logins sans doublon d'après leur domaine. |
-| `--mask-usernames` | Masque les identifiants dans le rapport (`m***@gmail.com`). |
-| `--report <chemin>` | Chemin du rapport HTML. |
-| `--bw <chemin>` | Chemin de l'exécutable `bw`. |
+| `--apply` | Applies the changes after preview and confirmation. Without it, the script does a dry run. |
+| `--yes` | Skips the confirmation. Avoid it on the first run. |
+| `--no-backup` | Skips the encrypted backup before applying. |
+| `--rename-all` | Also renames non-duplicated logins after their domain. |
+| `--mask-usernames` | Masks usernames in the report (`m***@gmail.com`). |
+| `--report <path>` | Path of the HTML report. |
+| `--bw <path>` | Path of the `bw` executable. |
 
-## Règles
+## Rules
 
-### Doublons
+### Duplicates
 
-Deux logins sont des doublons quand ils ont :
-- le même domaine enregistrable : `login.amazon.fr` et `www.amazon.fr/ap/signin` donnent tous les deux `amazon.fr`. Les suffixes privés sont respectés : `alice.github.io` et `bob.github.io` restent distincts ;
-- le même identifiant, sans tenir compte des espaces autour ni de la casse ;
-- le même mot de passe.
+Two logins are duplicates when they have:
+- the same registrable domain: `login.amazon.fr` and `www.amazon.fr/ap/signin` both give `amazon.fr`. Private suffixes are respected: `alice.github.io` and `bob.github.io` stay separate;
+- the same username, ignoring surrounding whitespace and case;
+- the same password.
 
-### Fusion
+### Merge
 
-- **Élément conservé** : celui qui porte des pièces jointes s'il y en a un, sinon le plus récemment modifié.
-- **Nom** : le domaine, par exemple `amazon.fr`.
-- **URIs** : une seule URI `https://<domaine>` en détection « domaine de base », plus les URIs d'application (`androidapp://`, etc.). `http` est gardé seulement si toutes les URIs d'origine étaient en `http`.
-- **Repris des doublons** : notes distinctes (séparées par `----`), champs perso absents, clé TOTP si l'élément conservé n'en a pas, favori, dossier, re-demande du mot de passe maître.
-- **Doublons** : envoyés dans la corbeille Bitwarden, récupérables 30 jours.
+- **Kept item**: the one with attachments if there is one, otherwise the most recently modified.
+- **Name**: the domain, for example `amazon.fr`.
+- **URIs**: a single `https://<domain>` URI with "base domain" match detection, plus app URIs (`androidapp://`, etc.). `http` is kept only if all the original URIs used `http`.
+- **Taken from duplicates**: distinct notes (separated by `----`), missing custom fields, TOTP key if the kept item has none, favorite, folder, master password re-prompt.
+- **Duplicates**: moved to the Bitwarden trash, recoverable for 30 days.
 
-### Éléments jamais modifiés
+### Items never modified
 
-Ils sont tous listés dans le rapport :
+They are all listed in the report:
 
-| Cas | Raison |
+| Case | Reason |
 |---|---|
-| Même domaine et identifiant, mots de passe différents | Conflit : l'un est peut-être périmé, à vérifier à la main. Les lettres `mdp A` / `mdp B` indiquent quels éléments partagent le même mot de passe, sans le révéler. |
-| Même domaine, identifiant et mot de passe, clés TOTP différentes | Conflit. |
-| Groupe contenant une passkey | Copie des passkeys par la CLI jugée risquée. |
-| Pièces jointes sur plusieurs éléments du groupe | La CLI ne peut pas déplacer une pièce jointe. |
-| Élément pointant vers plusieurs domaines | Domaine ambigu. |
-| Élément d'organisation | Seul le coffre personnel est traité. |
-| Aucune URI web exploitable (app seule, IP, `localhost`) | Pas de domaine. |
+| Same domain and username, different passwords | Conflict: one may be outdated, review manually. Labels `password A` / `password B` show which items share the same password without revealing it. |
+| Same domain, username and password, different TOTP keys | Conflict. |
+| Group containing a passkey | Copying passkeys through the CLI is considered risky. |
+| Attachments on several items of the group | The CLI cannot move an attachment. |
+| Item pointing to several domains | Ambiguous domain. |
+| Organization item | Only the personal vault is processed. |
+| No usable web URI (app only, IP, `localhost`) | No domain. |
 
-## Annuler
+## Undo
 
-- **Restaurer les doublons supprimés** : le rapport final liste les commandes `bw restore item <id>`.
-- **Retour complet**, y compris sur les éléments conservés : réimporter `bw-backup-<date>.json`. Cet export est chiffré avec la clé du compte et ne s'importe que sur ce même compte. Supprime-le une fois le résultat validé.
+- **Restore deleted duplicates**: the final report lists the `bw restore item <id>` commands.
+- **Full rollback**, including kept items: re-import `bw-backup-<date>.json`. This export is encrypted with the account key and can only be imported into the same account. Delete it once you have checked the result.
 
-## En cas d'erreur
+## Errors
 
-La console n'affiche que l'ID de l'élément concerné et le message de `bw`. Un échec d'édition n'entraîne aucune suppression dans le groupe concerné. Un `Ctrl+C` en cours d'application écrit quand même le rapport avec ce qui a été fait.
+The console only shows the ID of the affected item and the `bw` error message. A failed edit means nothing is deleted in that group. A `Ctrl+C` during apply still writes the report with what was done.
