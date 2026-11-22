@@ -60,5 +60,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd dist && sha256sum bw-dedupe-* > SHA256SUMS.txt
-          gh release create "${{ github.ref_name }}" bw-dedupe-* SHA256SUMS.txt \
-            --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes
+          tag="${{ github.ref_name }}" repo="${{ github.repository }}"
+          # The release may already exist when it was drafted on GitHub with a new tag.
+          gh release view "$tag" --repo "$repo" > /dev/null 2>&1 \
+            || gh release create "$tag" --repo "$repo" --title "$tag" --generate-notes
+          gh release upload "$tag" bw-dedupe-* SHA256SUMS.txt --repo "$repo" --clobber
