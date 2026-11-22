@@ -8,11 +8,11 @@
 [![release](https://img.shields.io/github/v/release/ThomLaurent/bitwarden-duplicate-merger?label=download)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-[![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-Unlicense-blue)](../../LICENSE)
 
-[English](README.md) · [Français](README.fr.md) · Español · [Deutsch](README.de.md) · [简体中文](README.zh-CN.md)
+[English](../../README.md) · [Français](README.fr.md) · Español · [Deutsch](README.de.md) · [简体中文](README.zh-CN.md)
 
-<img src="docs/screenshots/review-conflict.png" alt="Pantalla de revisión: tres inicios de sesión de Steam con dos contraseñas distintas" width="900">
+<img src="../screenshots/review-conflict.png" alt="Pantalla de revisión: tres inicios de sesión de Steam con dos contraseñas distintas" width="900">
 
 </div>
 
@@ -59,12 +59,12 @@ Los ejecutables incluyen su propio Python: siguen funcionando con cualquier vers
 gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
-Más detalles (en inglés): [guía de uso](docs/USAGE.md).
+Más detalles (en inglés): [guía de uso](../USAGE.md).
 
 ## Estado del proyecto
 
 Esta herramienta se comparte **tal cual** y probablemente no se mejorará. La hice para limpiar mi propia caja fuerte y preferí compartirla abiertamente en lugar de guardarla para mí. Espero que te ahorre el tiempo y los tokens de crear lo mismo y, sobre todo, las horas de fusionar cientos de entradas a mano.
 
-Puede que las issues y pull requests no reciban respuesta. Los forks son bienvenidos: el código es de dominio público ([Unlicense](LICENSE)), y [AGENTS.md](AGENTS.md) lo explica a ti y a los asistentes de programación con IA.
+Puede que las issues y pull requests no reciban respuesta. Los forks son bienvenidos: el código es de dominio público ([Unlicense](../../LICENSE)), y [AGENTS.md](../../AGENTS.md) lo explica a ti y a los asistentes de programación con IA.
 
 Sin relación con Bitwarden, Inc. "Bitwarden" es una marca de Bitwarden, Inc.

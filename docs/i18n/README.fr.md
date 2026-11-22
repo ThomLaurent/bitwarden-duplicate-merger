@@ -8,11 +8,11 @@
 [![release](https://img.shields.io/github/v/release/ThomLaurent/bitwarden-duplicate-merger?label=download)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-[![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-Unlicense-blue)](../../LICENSE)
 
-[English](README.md) · Français · [Español](README.es.md) · [Deutsch](README.de.md) · [简体中文](README.zh-CN.md)
+[English](../../README.md) · Français · [Español](README.es.md) · [Deutsch](README.de.md) · [简体中文](README.zh-CN.md)
 
-<img src="docs/screenshots/review-conflict.png" alt="Écran de revue : trois identifiants Steam avec deux mots de passe différents" width="900">
+<img src="../screenshots/review-conflict.png" alt="Écran de revue : trois identifiants Steam avec deux mots de passe différents" width="900">
 
 </div>
 
@@ -59,12 +59,12 @@ Les exécutables embarquent leur propre Python : ils continuent de fonctionner q
 gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
-Détails (en anglais) : [guide d'utilisation](docs/USAGE.md).
+Détails (en anglais) : [guide d'utilisation](../USAGE.md).
 
 ## État du projet
 
 Cet outil est partagé **tel quel** et ne sera probablement pas amélioré. Je l'ai fait pour nettoyer mon propre coffre, et j'ai préféré le partager ouvertement plutôt que le garder pour moi. J'espère qu'il t'évitera le temps et les tokens nécessaires pour construire la même chose, et surtout les heures à fusionner des centaines d'identifiants à la main.
 
-Les issues et pull requests risquent de rester sans réponse. Les forks sont les bienvenus : le code est dans le domaine public ([Unlicense](LICENSE)), et [AGENTS.md](AGENTS.md) l'explique à toi comme aux assistants de code IA.
+Les issues et pull requests risquent de rester sans réponse. Les forks sont les bienvenus : le code est dans le domaine public ([Unlicense](../../LICENSE)), et [AGENTS.md](../../AGENTS.md) l'explique à toi comme aux assistants de code IA.
 
 Projet sans lien avec Bitwarden, Inc. « Bitwarden » est une marque de Bitwarden, Inc.

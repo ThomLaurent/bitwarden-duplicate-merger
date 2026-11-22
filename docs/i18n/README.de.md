@@ -8,11 +8,11 @@
 [![release](https://img.shields.io/github/v/release/ThomLaurent/bitwarden-duplicate-merger?label=download)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-[![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-Unlicense-blue)](../../LICENSE)
 
-[English](README.md) · [Français](README.fr.md) · [Español](README.es.md) · Deutsch · [简体中文](README.zh-CN.md)
+[English](../../README.md) · [Français](README.fr.md) · [Español](README.es.md) · Deutsch · [简体中文](README.zh-CN.md)
 
-<img src="docs/screenshots/review-conflict.png" alt="Prüfansicht: drei Steam-Zugangsdaten mit zwei verschiedenen Passwörtern" width="900">
+<img src="../screenshots/review-conflict.png" alt="Prüfansicht: drei Steam-Zugangsdaten mit zwei verschiedenen Passwörtern" width="900">
 
 </div>
 
@@ -59,12 +59,12 @@ Die ausführbaren Dateien bringen ihr eigenes Python mit und funktionieren daher
 gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
-Mehr (auf Englisch): [Benutzerhandbuch](docs/USAGE.md).
+Mehr (auf Englisch): [Benutzerhandbuch](../USAGE.md).
 
 ## Projektstatus
 
 Dieses Tool wird **so wie es ist** geteilt und wird wahrscheinlich nicht weiterentwickelt. Ich habe es gebaut, um meinen eigenen Tresor aufzuräumen, und wollte es lieber offen teilen als für mich behalten. Ich hoffe, es erspart dir Zeit und Tokens für einen Nachbau und vor allem die Stunden, Hunderte von Einträgen von Hand zusammenzuführen.
 
-Issues und Pull Requests bleiben möglicherweise unbeantwortet. Forks sind willkommen: Der Code ist gemeinfrei ([Unlicense](LICENSE)), und [AGENTS.md](AGENTS.md) erklärt ihn dir und KI-Programmierassistenten.
+Issues und Pull Requests bleiben möglicherweise unbeantwortet. Forks sind willkommen: Der Code ist gemeinfrei ([Unlicense](../../LICENSE)), und [AGENTS.md](../../AGENTS.md) erklärt ihn dir und KI-Programmierassistenten.
 
 Nicht mit Bitwarden, Inc. verbunden. "Bitwarden" ist eine Marke von Bitwarden, Inc.

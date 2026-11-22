@@ -8,11 +8,11 @@
 [![release](https://img.shields.io/github/v/release/ThomLaurent/bitwarden-duplicate-merger?label=download)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
-[![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+[![license](https://img.shields.io/badge/license-Unlicense-blue)](../../LICENSE)
 
-[English](README.md) · [Français](README.fr.md) · [Español](README.es.md) · [Deutsch](README.de.md) · 简体中文
+[English](../../README.md) · [Français](README.fr.md) · [Español](README.es.md) · [Deutsch](README.de.md) · 简体中文
 
-<img src="docs/screenshots/review-conflict.png" alt="审核界面：三个 Steam 登录项，包含两个不同的密码" width="900">
+<img src="../screenshots/review-conflict.png" alt="审核界面：三个 Steam 登录项，包含两个不同的密码" width="900">
 
 </div>
 
@@ -59,12 +59,12 @@
 gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
-更多内容（英文）：[使用指南](docs/USAGE.md)。
+更多内容（英文）：[使用指南](../USAGE.md)。
 
 ## 项目状态
 
 本工具**按原样**分享，之后大概率不会再改进。我写它是为了清理自己的密码库，觉得公开分享比自己留着更好。希望它能帮你省下重新开发所需的时间和 token，更重要的是，省下手动合并几百个登录项的时间。
 
-Issue 和 Pull Request 可能得不到回复。欢迎 fork：代码属于公有领域（[Unlicense](LICENSE)），[AGENTS.md](AGENTS.md) 为你和 AI 编程助手说明了代码结构。
+Issue 和 Pull Request 可能得不到回复。欢迎 fork：代码属于公有领域（[Unlicense](../../LICENSE)），[AGENTS.md](../../AGENTS.md) 为你和 AI 编程助手说明了代码结构。
 
 本项目与 Bitwarden, Inc. 无关。"Bitwarden" 是 Bitwarden, Inc. 的商标。

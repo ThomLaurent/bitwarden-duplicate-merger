@@ -21,6 +21,7 @@ User-facing docs: `README.md` (pitch, quick start) and `docs/USAGE.md` (full beh
 | `bwdedupe/unlock.py` | Unlock in the terminal, or in a terminal window that posts the session key back. |
 | `bwdedupe/web/` | UI: vanilla JS (`app.js`), no build step, no external resource. |
 | `tests/` | `unittest` suite, `fake_bw.py` (stand-in CLI), `demo_vault.py` (made-up data). |
+| `docs/i18n/` | Translated READMEs. |
 | `tools/screenshots.cjs` | Regenerates `docs/screenshots/` with Playwright. |
 | `packaging/bw-dedupe.spec` | PyInstaller spec for the standalone executables. |
 | `.github/workflows/` | `tests.yml` (CI), `release.yml` (executables on `v*` tags, with build attestations). |
@@ -57,6 +58,6 @@ Refresh the Public Suffix List: download https://publicsuffix.org/list/public_su
 
 ## Conventions
 
-- English everywhere (code, comments, UI, docs). Translated READMEs: `README.<lang>.md`, keep them in sync with `README.md` when its content changes.
+- English everywhere (code, comments, UI, docs). Translated READMEs: `docs/i18n/README.<lang>.md`, keep them in sync with `README.md` when its content changes.
 - Comments only where a reader of the code needs them.
 - Any behavior change: update `docs/USAGE.md` and add or adjust a test in `tests/test_flow.py`.
