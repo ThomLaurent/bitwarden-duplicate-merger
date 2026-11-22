@@ -10,15 +10,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
 
-import tldextract
+from .psl import registrable_domain
 
 ITEM_TYPE_LOGIN = 1
 URI_MATCH_DOMAIN = 0
 WEB_SCHEMES = {"http", "https"}
-
-# Bundled Public Suffix List snapshot only: no network access besides bw itself.
-_extractor = tldextract.TLDExtract(suffix_list_urls=(), include_psl_private_domains=True, cache_dir=None)
-
 
 def parse_web_uri(uri: str) -> tuple[str | None, str | None]:
     """Return (scheme, registrable domain) for a web URI, (None, None) otherwise."""
@@ -35,11 +31,8 @@ def parse_web_uri(uri: str) -> tuple[str | None, str | None]:
     scheme = parts.scheme.lower()
     if scheme not in WEB_SCHEMES or not host:
         return None, None
-    ext = _extractor(host)
-    domain = getattr(ext, "top_domain_under_public_suffix", None)
-    if domain is None:
-        domain = ext.registered_domain
-    return (scheme, domain.lower()) if domain else (None, None)
+    domain = registrable_domain(host)
+    return (scheme, domain) if domain else (None, None)
 
 
 @dataclass

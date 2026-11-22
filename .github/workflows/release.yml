@@ -1,0 +1,64 @@
+name: release
+
+# Push a tag such as v1.0.0 to build the standalone executables and publish a release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset: bw-dedupe-linux-x64
+          - os: windows-latest
+            asset: bw-dedupe-windows-x64.exe
+          - os: macos-latest
+            asset: bw-dedupe-macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - run: python -m unittest discover -s tests -v
+      - run: python -m pip install pyinstaller==6.11.1
+      - run: pyinstaller --distpath dist packaging/bw-dedupe.spec
+      - name: Rename and smoke test
+        shell: bash
+        run: |
+          src=dist/bw-dedupe; [ -f dist/bw-dedupe.exe ] && src=dist/bw-dedupe.exe
+          mv "$src" "dist/${{ matrix.asset }}"
+          "dist/${{ matrix.asset }}" --help
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: dist/${{ matrix.asset }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd dist && sha256sum bw-dedupe-* > SHA256SUMS.txt
+          gh release create "${{ github.ref_name }}" bw-dedupe-* SHA256SUMS.txt \
+            --repo "${{ github.repository }}" --title "${{ github.ref_name }}" --generate-notes

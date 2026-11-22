@@ -1,106 +1,73 @@
-# bitwarden-duplicate-merger
+<div align="center">
 
-Finds duplicate Bitwarden logins (same domain and username, different subdomain or URL), suggests how to merge them, and lets you review every change in a local web page before anything is applied.
+# Bitwarden Duplicate Merger
 
-The tool uses the official `bw` CLI and edits the vault in place. Item IDs, attachments, passkeys and history of the kept items are preserved.
+**Find and merge duplicate logins in your Bitwarden vault, with a review screen before anything changes.**
+
+[![tests](https://github.com/ThomLaurent/bitwarden-duplicate-merger/actions/workflows/tests.yml/badge.svg)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/actions/workflows/tests.yml)
+[![release](https://img.shields.io/github/v/release/ThomLaurent/bitwarden-duplicate-merger?label=download)](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
+![dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+[![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
+
+English · [Français](README.fr.md) · [Español](README.es.md) · [Deutsch](README.de.md) · [简体中文](README.zh-CN.md)
+
+<img src="docs/screenshots/review-conflict.png" alt="Review screen: a group of three Steam logins with two different passwords, where the user picks the item and password to keep" width="900">
+
+</div>
+
+After importing passwords from a browser or another password manager, a vault often holds the same account several times: `www.amazon.fr`, `login.amazon.fr` and `amazon.fr/ap/signin`, all with the same username and password. Bitwarden has no built-in way to merge them, and doing it by hand for hundreds of logins takes hours.
+
+This tool groups those duplicates, suggests how to merge each group, lets you check and change every decision in a local web page, then applies only what you validated, through the official Bitwarden CLI.
 
 ## How it works
 
-1. Start the tool. It unlocks the vault through `bw` and opens a page in your browser.
-2. The rule groups the duplicates and suggests a merge for each group. Groups it cannot decide (different passwords, passkeys...) are flagged.
-3. Review each group: change anything you want, then validate it.
-4. Quit whenever you want. Decisions are saved and the review resumes where you left it, even after a reboot.
-5. Apply the validated groups, all at once or a few at a time. A report shows what was done, starting with the changes that differ from the rule.
+1. **Start the tool.** The Bitwarden CLI unlocks your vault and a page opens in your browser.
+2. **Review the suggestions.** Logins with the same domain and username are grouped. Groups the rule cannot decide alone (different passwords, passkeys...) are flagged for you.
+3. **Change anything**: which item to keep, name, password, TOTP, notes, URIs, which items to leave out. Group logins by hand when needed (`ebay.fr` and `ebay.com`).
+4. **Stop and resume any time.** Decisions are saved to a file, even across reboots.
+5. **Apply** all validated groups, or a few at a time. A report lists what was done, starting with what you decided differently from the rule.
 
-## Privacy
+<img src="docs/screenshots/report.png" alt="Merge report: counts of edited and trashed items, then the decisions that differ from the rule" width="700">
 
-- Your master password is only read by the Bitwarden CLI. The tool only receives the session key, keeps it in memory and passes it to `bw` through the environment, never on the command line.
-- Passwords, TOTP keys, custom field values and note contents are never written to disk or logged. The page shows them only when you click "show" on an item.
-- The page is served on `127.0.0.1` only and protected by a random token.
-- The work file and the reports contain item names, usernames, URIs and IDs. Keep them local.
-- No network access other than through `bw`. The Public Suffix List bundled with `tldextract` is used.
+## Guarantees
 
-## Requirements
+- **Your master password never reaches the tool.** Only the Bitwarden CLI reads it; the tool receives the session key and keeps it in memory.
+- **Secrets are never written to disk or logged.** Passwords, TOTP keys, field values and notes are compared in memory. The page shows one only when you click "show".
+- **Nothing changes without your validation**, and only the groups you validated are applied.
+- **No stale plan.** Right before each group is applied, the tool checks with Bitwarden that none of its items changed since your review. Changed groups are skipped and reported.
+- **Reversible.** Duplicates go to the Bitwarden trash (30 days), kept items keep their ID, attachments and passkeys, and an encrypted backup is made before applying.
+- **Local only.** The page is served on `127.0.0.1` with a random token. No network access other than `bw` talking to your Bitwarden server.
+- **Small and readable.** About 2,000 lines of Python and JavaScript, standard library only, no dependency to audit.
 
-- [Bitwarden CLI](https://bitwarden.com/help/cli/) (`bw`) in the PATH, or its path passed with `--bw`.
-- [uv](https://docs.astral.sh/uv/): it installs `tldextract` automatically on first run.
-  Without uv: Python 3.10+ and `pip install tldextract`, then `python bw_dedupe.py` instead of `uv run bw_dedupe.py`.
+## Quick start
 
-## Usage
+1. Install the [Bitwarden CLI](https://bitwarden.com/help/cli/) (`bw`).
+2. Download the executable for your system from the [latest release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) and run it from a terminal:
+   ```bash
+   ./bw-dedupe-linux-x64
+   ```
+   Or run from source with any Python 3.10+, nothing to install:
+   ```bash
+   git clone https://github.com/ThomLaurent/bitwarden-duplicate-merger
+   cd bitwarden-duplicate-merger
+   python bw_dedupe.py
+   ```
+3. Unlock the vault when `bw` asks, then review in the browser page that opens.
+
+Executables bundle their own Python, so they keep working whatever Python you have, as long as `bw` keeps its commands. Each one is built by GitHub Actions from this repository and can be checked with:
 
 ```bash
-uv run bw_dedupe.py
+gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
-- If the vault is locked, `bw` asks for your master password in the terminal (and for your email and two-step login code the first time).
-- If the tool is not started from a terminal, or the vault gets locked while you work, it opens a terminal window for `bw` and gets the session key back once you are done.
-- Run it again from the same folder to resume.
-- The vault is locked when you quit, unless `BW_SESSION` was already set or `--keep-unlocked` is passed.
+More: [usage guide](docs/USAGE.md) (review, rule, options, undo, troubleshooting).
 
-### Review
+## Project status
 
-Each group lists its items with:
-- **Keep**: the item that is edited and stays in the vault. Its ID, attachments and passkeys are preserved.
-- **Merge**: unchecked items are left untouched. Checked ones go to the Bitwarden trash.
-- Letters (`A`, `B`...) in the Password, TOTP and Notes columns: items with the same letter hold the same value. The value itself is only shown with "show".
+This tool is shared **as is** and will probably not be improved. I built it to clean my own vault, and I thought it better to share it openly than to keep it to myself. I hope it saves you the time and tokens of building the same thing, and above all the hours of merging hundreds of logins by hand.
 
-The **Result** section sets the name, username, password, TOTP key, notes and URIs of the kept item. Custom fields of all merged items, favorite, folder and master password re-prompt are merged automatically.
+Issues and pull requests may not get an answer. Forks are welcome: the code is in the public domain ([Unlicense](LICENSE)), and [AGENTS.md](AGENTS.md) explains it to you and to AI coding assistants.
 
-Other actions:
-- **Leave untouched**: nothing changes, and the rule no longer suggests these items.
-- **✕** on an item: takes it out of the group. The rule no longer suggests it.
-- **All logins** tab: select logins to group them by hand (for example `amazon.fr` and `amazon.com`), or rename them after their domain.
-- Shortcuts: `J` / `K` next / previous group, `V` validate and go to the next one, `/` search.
-
-### Apply
-
-**Apply validated** applies the validated groups only. Before each group, the tool syncs with Bitwarden and checks that none of its items changed since your review. Changed groups are skipped, listed in the report and come back to review.
-
-An encrypted backup (`bw export --format encrypted_json`) is made first unless you uncheck it. `bw` may ask for your master password in the terminal for it.
-
-### Reports
-
-Each run writes `bw-dedupe-reports/bw-dedupe-report-<date>.html`, which opens without the tool. The **History** tab reopens them. A report shows:
-- what differs from the rule: groups you created, resolved or changed, with your decisions;
-- what was not applied (item changed in the vault, `bw` error);
-- the merges applied as suggested;
-- the `bw restore item <id>` commands to bring trashed items back.
-
-### Options
-
-| Option | Effect |
-|---|---|
-| `--workfile <path>` | Work file holding your decisions. Default: `bw-dedupe-session.json`. |
-| `--reports <path>` | Folder for reports and backups. Default: `bw-dedupe-reports`. |
-| `--port <n>` | Local port. Default: random. |
-| `--no-browser` | Does not open the browser; open the printed link yourself. |
-| `--keep-unlocked` | Does not lock the vault when quitting. |
-| `--bw <path>` | Path of the `bw` executable. |
-
-## Rule
-
-Two logins are suggested as duplicates when they have:
-- the same registrable domain: `login.amazon.fr` and `www.amazon.fr/ap/signin` both give `amazon.fr`. Private suffixes are respected: `alice.github.io` and `bob.github.io` stay separate;
-- the same username, ignoring surrounding whitespace and case.
-
-Suggested merge:
-- **Kept item**: the one with attachments if there is one, otherwise the most recently modified.
-- **Name**: the domain, for example `amazon.fr`. Bitwarden already shows the username next to it.
-- **URIs**: a single `https://<domain>` URI with "base domain" match detection, plus app URIs (`androidapp://`, etc.). `http` is kept only if all the original URIs used `http`.
-- **Taken from the others**: distinct notes (separated by `----`), missing custom fields, TOTP key if the kept item has none.
-
-The rule does not decide, and leaves the group to you, when:
-
-| Case | Why |
-|---|---|
-| Different passwords | One may be outdated. |
-| Different TOTP keys | Same. |
-| A passkey in the group | Passkeys cannot be moved; the tool checks the kept item still has its passkey after the edit. |
-| Attachments on several items | The CLI cannot move an attachment. |
-
-Never suggested: items with several domains, organization items, items without a usable web URI (app only, IP, `localhost`). The first and last can still be grouped by hand.
-
-## Undo
-
-- **Trashed items**: restore them from the Bitwarden trash within 30 days, or with the commands in the report.
-- **Full rollback**, including kept items: re-import the encrypted backup. It can only be imported into the same account. Delete it once you have checked the result.
+Not affiliated with Bitwarden, Inc. "Bitwarden" is a trademark of Bitwarden, Inc.

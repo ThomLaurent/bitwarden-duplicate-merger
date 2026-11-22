@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["tldextract>=5.1"]
+# dependencies = []
 # ///
 """Review and merge duplicate Bitwarden logins in a local web UI, through the official `bw` CLI."""
 
@@ -47,7 +47,7 @@ def main() -> int:
             if not bw.session:
                 print("Vault not unlocked.", file=sys.stderr)
                 return 1
-        print("Loading the vault...")
+        print("Loading the vault...", flush=True)
         session.open()
     except (BwError, SessionError) as err:
         print(err, file=sys.stderr)
@@ -59,7 +59,7 @@ def main() -> int:
         app.request_unlock()
         if app.unlock_error:
             print(app.unlock_error, file=sys.stderr)
-    print(f"Open {app.url}\nPress Ctrl+C or use Quit in the page to stop.")
+    print(f"Open {app.url}\nPress Ctrl+C or use Quit in the page to stop.", flush=True)
     if not args.no_browser:
         webbrowser.open(app.url)
     try:

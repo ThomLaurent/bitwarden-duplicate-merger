@@ -48,8 +48,11 @@ def run_helper(exe: str, callback: str, token: str) -> int:
 
 
 def open_helper_window(exe: str, callback: str, token: str) -> None:
-    script = Path(sys.argv[0]).resolve()
-    cmd = [sys.executable, str(script), "--bw", exe, "--unlock-helper", callback, token]
+    if getattr(sys, "frozen", False):
+        cmd = [sys.executable, "--bw", exe, "--unlock-helper", callback, token]
+    else:
+        script = Path(sys.argv[0]).resolve()
+        cmd = [sys.executable, str(script), "--bw", exe, "--unlock-helper", callback, token]
     if sys.platform == "win32":
         subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE)
         return
