@@ -1,3 +1,4 @@
-bw-dedupe-report-*.html
-bw-backup-*.json
+bw-dedupe-session.json
+bw-dedupe-session.json.tmp
+bw-dedupe-reports/
 __pycache__/
