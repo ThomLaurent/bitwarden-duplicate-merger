@@ -56,7 +56,9 @@ FAKE_VAULT=/tmp/demo.json python bw_dedupe.py --bw ./tests/fake_bw.py   # master
 pyinstaller --distpath dist packaging/bw-dedupe.spec   # standalone executable
 ```
 
-Screenshots: start the tool with `--demo --no-browser`, then `node tools/screenshots.cjs <printed url> docs/screenshots` (needs `playwright`).
+Test an executable without a release: Actions, `release`, Run workflow. It builds the three executables and attaches them to the run, without publishing anything. Or build for your own system with `pip install pyinstaller==6.11.1` and the `pyinstaller` command above.
+
+Screenshots: a release refreshes `docs/screenshots/` and commits them to `main`. By hand: start the tool with `--demo --no-browser`, then `node tools/screenshots.cjs <printed url> docs/screenshots` (needs `playwright`). The demo badge is hidden in screenshots.
 
 Refresh the Public Suffix List: download https://publicsuffix.org/list/public_suffix_list.dat over `bwdedupe/public_suffix_list.dat`.
 
@@ -65,3 +67,4 @@ Refresh the Public Suffix List: download https://publicsuffix.org/list/public_su
 - English everywhere (code, comments, UI, docs). Translated READMEs: `docs/translations/README.<lang>.md`, keep them in sync with `README.md` when its content changes.
 - Comments only where a reader of the code needs them.
 - Any behavior change: update `docs/USAGE.md` and add or adjust a test in `tests/test_flow.py`.
+- Work left for later goes in a GitHub issue on this repository, not in a TODO in code or docs. No project board for now.

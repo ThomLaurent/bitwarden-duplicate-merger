@@ -14,10 +14,28 @@ from pathlib import Path
 from .vault import Bw, BwError
 
 
+SERVERS = {"1": None, "2": "https://vault.bitwarden.eu"}
+
+
+def choose_server(bw: Bw, ask=input) -> None:
+    """Before the first login, let the user pick the EU cloud or a self-hosted server instead of bitwarden.com."""
+    print("Where is your Bitwarden account?\n"
+          "  1  bitwarden.com\n"
+          "  2  bitwarden.eu\n"
+          "  3  another server (self-hosted)")
+    choice = ask("Your choice [1]: ").strip() or "1"
+    url = SERVERS.get(choice) if choice in SERVERS else ask("Server address, for example https://vault.example.com: ").strip()
+    if url:
+        bw.run("config", "server", url)
+
+
 def prompt_session(exe: str) -> str | None:
     """Run `bw login` or `bw unlock` in the current terminal and return the session key."""
-    status = Bw(exe).status().get("status")
-    args = ["login", "--raw"] if status == "unauthenticated" else ["unlock", "--raw"]
+    bw = Bw(exe)
+    status = bw.status()
+    if status.get("status") == "unauthenticated" and not status.get("serverUrl"):
+        choose_server(bw)
+    args = ["login", "--raw"] if status.get("status") == "unauthenticated" else ["unlock", "--raw"]
     # bw prompts on stderr, so only the session key is captured.
     proc = subprocess.run([exe, *args], stdout=subprocess.PIPE, text=True)
     key = proc.stdout.strip()

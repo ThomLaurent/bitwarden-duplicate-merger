@@ -35,21 +35,22 @@ def main() -> int:
     parser.add_argument("--unlock-helper", nargs=2, metavar=("CALLBACK", "TOKEN"), help=argparse.SUPPRESS)
     args = parser.parse_args()
 
+    exe = "" if args.demo else bwcli.resolve(args.bw, sys.stdin.isatty())
+    if exe == bwcli.DEMO:
+        args.demo, exe = True, ""
     if args.demo:
         folder = Path(tempfile.mkdtemp(prefix="bw-dedupe-demo-"))
         print(f"Demo: made-up vault, changes stay in memory. Work file and reports go to {folder}", flush=True)
         bw: Bw = DemoBw()
-        exe = ""
-        workfile, reports = args.workfile or folder / "bw-dedupe-session.json", args.reports or folder / "reports"
     else:
-        exe = bwcli.resolve(args.bw, sys.stdin.isatty())
         if not exe:
             return 2
         if args.unlock_helper:
             return unlock.run_helper(exe, *args.unlock_helper)
         bw = Bw(exe, os.environ.get("BW_SESSION"))
-        workfile = args.workfile or Path("bw-dedupe-session.json")
-        reports = args.reports or Path("bw-dedupe-reports")
+        folder = data_folder()
+    workfile = args.workfile or folder / "bw-dedupe-session.json"
+    reports = args.reports or folder / ("reports" if args.demo else "bw-dedupe-reports")
 
     session = Session(bw, workfile, reports)
     try:
@@ -80,6 +81,16 @@ def main() -> int:
         app.shutdown()
     print("Stopped.")
     return 0
+
+
+def data_folder() -> Path:
+    """Default folder for the work file and reports: the current one, or the executable's when double-clicked.
+
+    macOS and most Linux file managers start a double-clicked executable in the home folder.
+    """
+    if getattr(sys, "frozen", False) and Path.cwd() == Path.home():
+        return Path(sys.executable).resolve().parent
+    return Path()
 
 
 def pause_on_error(code: int) -> int:

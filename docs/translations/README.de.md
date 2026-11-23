@@ -47,8 +47,8 @@ Dieses Tool gruppiert die Duplikate, schlägt für jede Gruppe eine Zusammenfüh
 1. Lade **`bw-dedupe-windows-x64.exe`** aus dem [neuesten Release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) herunter.
 2. Leg die Datei in einen eigenen Ordner, zum Beispiel einen neuen Ordner `bw-dedupe` unter Dokumente. Deine Entscheidungen und Berichte werden daneben gespeichert.
 3. Doppelklicke sie. Zeigt Windows „Der Computer wurde durch Windows geschützt“, klicke auf **Weitere Informationen** und dann auf **Trotzdem ausführen**: Die Datei ist nicht signiert.
-4. Ein schwarzes Fenster öffnet sich. Beim ersten Start bietet es an, das offizielle Bitwarden-Kommandozeilentool herunterzuladen: Drücke die Eingabetaste.
-5. Melde dich in diesem Fenster bei Bitwarden an: E-Mail, Master-Passwort und, falls du sie nutzt, den Code der zweistufigen Anmeldung. Beim Tippen des Passworts erscheint nichts, das ist normal.
+4. Ein schwarzes Fenster öffnet sich. Beim ersten Start bietet es an, das offizielle Bitwarden-Kommandozeilentool herunterzuladen: Drücke die Eingabetaste. Um dich zuerst in einem erfundenen Tresor umzusehen, tippe `D` und dann die Eingabetaste.
+5. Wähle, wo dein Konto liegt (bitwarden.com, bitwarden.eu oder dein eigener Server), und melde dich an: E-Mail, Master-Passwort und, falls du sie nutzt, den Code der zweistufigen Anmeldung. Beim Tippen des Passworts erscheint nichts, das ist normal.
 6. Die Prüfseite öffnet sich in deinem Browser.
 
 </details>
@@ -56,20 +56,12 @@ Dieses Tool gruppiert die Duplikate, schlägt für jede Gruppe eine Zusammenfüh
 <details>
 <summary><b>macOS</b></summary>
 
-1. Lade **`bw-dedupe-macos-arm64`** aus dem [neuesten Release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) herunter. Es läuft auf Macs mit Apple-Chip (M1 oder neuer); auf einem Intel-Mac starte es aus dem Quellcode.
-2. Öffne die App Terminal und führe diese Befehle nacheinander aus. Der zweite erlaubt macOS, eine nicht signierte Datei zu starten.
-   ```bash
-   cd ~/Downloads
-   ```
-   ```bash
-   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
-   ```
-   ```bash
-   ./bw-dedupe-macos-arm64
-   ```
-3. Beim ersten Start bietet das Tool an, das offizielle Bitwarden-Kommandozeilentool herunterzuladen: Drücke die Eingabetaste.
-4. Melde dich im Terminal bei Bitwarden an: E-Mail, Master-Passwort und, falls du sie nutzt, den Code der zweistufigen Anmeldung. Beim Tippen des Passworts erscheint nichts, das ist normal.
-5. Die Prüfseite öffnet sich in deinem Browser.
+1. Lade **`bw-dedupe-macos-arm64.zip`** aus dem [neuesten Release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) herunter. Es läuft auf Macs mit Apple-Chip (M1 oder neuer); auf einem Intel-Mac starte es aus dem Quellcode.
+2. Öffne die ZIP-Datei, falls Safari das nicht schon getan hat, und leg `bw-dedupe-macos-arm64` in einen eigenen Ordner, zum Beispiel einen neuen Ordner `bw-dedupe` unter Dokumente. Deine Entscheidungen und Berichte werden daneben gespeichert.
+3. Doppelklicke die Datei. Beim ersten Mal lehnt macOS sie ab, weil sie nicht signiert ist: Klicke auf **Fertig**, öffne die **Systemeinstellungen**, dann **Datenschutz & Sicherheit**, scrolle nach unten, klicke auf **Dennoch öffnen** und bestätige.
+4. Ein Terminal-Fenster öffnet sich. Beim ersten Start bietet es an, das offizielle Bitwarden-Kommandozeilentool herunterzuladen: Drücke die Eingabetaste. Um dich zuerst in einem erfundenen Tresor umzusehen, tippe `D` und dann die Eingabetaste.
+5. Wähle, wo dein Konto liegt (bitwarden.com, bitwarden.eu oder dein eigener Server), und melde dich an: E-Mail, Master-Passwort und, falls du sie nutzt, den Code der zweistufigen Anmeldung. Beim Tippen des Passworts erscheint nichts, das ist normal.
+6. Die Prüfseite öffnet sich in deinem Browser.
 
 </details>
 
@@ -85,7 +77,7 @@ chmod +x bw-dedupe-linux-x64
 ./bw-dedupe-linux-x64
 ```
 
-Beim ersten Start bietet das Tool an, die offizielle Bitwarden-CLI herunterzuladen. Melde dich an, wenn `bw` danach fragt, und prüfe auf der geöffneten Seite.
+Beim ersten Start bietet das Tool an, die offizielle Bitwarden-CLI herunterzuladen oder einen Demo-Tresor auszuprobieren. Melde dich an, wenn `bw` danach fragt, und prüfe auf der geöffneten Seite.
 
 </details>
 
@@ -106,7 +98,7 @@ python bw_dedupe.py
 
 </details>
 
-**Erst ausprobieren** mit einem erfundenen Tresor, ohne Bitwarden-CLI oder Konto: Starte es im Terminal mit `--demo`, zum Beispiel `python bw_dedupe.py --demo`. Es wird nichts in einem Tresor gespeichert.
+**Erst ausprobieren** mit einem erfundenen Tresor, ohne Bitwarden-CLI oder Konto: Tippe `D`, wenn das Tool den Download der CLI anbietet, oder starte es im Terminal mit `--demo` (zum Beispiel `python bw_dedupe.py --demo`). Es wird nichts in einem Tresor gespeichert.
 
 Die ausführbaren Dateien bringen ihr eigenes Python mit und funktionieren daher unabhängig von deiner Python-Version, solange `bw` seine Befehle beibehält. Jede wird von GitHub Actions aus diesem Repository gebaut und lässt sich prüfen mit:
 

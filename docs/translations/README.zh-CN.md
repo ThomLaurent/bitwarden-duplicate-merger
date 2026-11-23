@@ -47,8 +47,8 @@
 1. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-windows-x64.exe`**。
 2. 把它放进单独的文件夹，例如在“文档”中新建一个 `bw-dedupe` 文件夹。你的决定和报告会保存在它旁边。
 3. 双击运行。如果 Windows 显示“Windows 已保护你的电脑”，点击 **更多信息**，再点击 **仍要运行**：该文件没有签名。
-4. 会打开一个黑色窗口。第一次运行时，它会提议下载 Bitwarden 官方命令行工具：按回车键。
-5. 在该窗口中登录 Bitwarden：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
+4. 会打开一个黑色窗口。第一次运行时，它会提议下载 Bitwarden 官方命令行工具：按回车键。如果想先用虚构的密码库看看，输入 `D` 再按回车键。
+5. 选择你的账号所在位置（bitwarden.com、bitwarden.eu 或你自己的服务器），然后登录：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
 6. 审核页面会在浏览器中打开。
 
 </details>
@@ -56,20 +56,12 @@
 <details>
 <summary><b>macOS</b></summary>
 
-1. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-macos-arm64`**。它适用于搭载 Apple 芯片（M1 或更新）的 Mac；Intel Mac 请从源码运行。
-2. 打开“终端”应用，然后逐条运行以下命令。第二条命令让 macOS 允许运行未签名的文件。
-   ```bash
-   cd ~/Downloads
-   ```
-   ```bash
-   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
-   ```
-   ```bash
-   ./bw-dedupe-macos-arm64
-   ```
-3. 第一次运行时，本工具会提议下载 Bitwarden 官方命令行工具：按回车键。
-4. 在终端中登录 Bitwarden：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
-5. 审核页面会在浏览器中打开。
+1. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-macos-arm64.zip`**。它适用于搭载 Apple 芯片（M1 或更新）的 Mac；Intel Mac 请从源码运行。
+2. 如果 Safari 没有自动解压，请打开 zip 文件，然后把 `bw-dedupe-macos-arm64` 放进单独的文件夹，例如在“文稿”中新建一个 `bw-dedupe` 文件夹。你的决定和报告会保存在它旁边。
+3. 双击运行。第一次运行时，macOS 会因为文件没有签名而拒绝：点击 **完成**，打开 **系统设置**，进入 **隐私与安全性**，向下滚动并点击 **仍要打开**，然后确认。
+4. 会打开一个终端窗口。第一次运行时，它会提议下载 Bitwarden 官方命令行工具：按回车键。如果想先用虚构的密码库看看，输入 `D` 再按回车键。
+5. 选择你的账号所在位置（bitwarden.com、bitwarden.eu 或你自己的服务器），然后登录：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
+6. 审核页面会在浏览器中打开。
 
 </details>
 
@@ -85,7 +77,7 @@ chmod +x bw-dedupe-linux-x64
 ./bw-dedupe-linux-x64
 ```
 
-第一次运行时，本工具会提议下载官方 Bitwarden CLI。按 `bw` 的提示登录，然后在打开的页面中审核。
+第一次运行时，本工具会提议下载官方 Bitwarden CLI，或试用演示密码库。按 `bw` 的提示登录，然后在打开的页面中审核。
 
 </details>
 
@@ -106,7 +98,7 @@ python bw_dedupe.py
 
 </details>
 
-**先试用**一个虚构的密码库，无需 Bitwarden CLI 或账号：在终端中加上 `--demo` 启动，例如 `python bw_dedupe.py --demo`。不会向任何密码库写入内容。
+**先试用**一个虚构的密码库，无需 Bitwarden CLI 或账号：在本工具提议下载 CLI 时输入 `D`，或者在终端中加上 `--demo` 启动（例如 `python bw_dedupe.py --demo`）。不会向任何密码库写入内容。
 
 可执行文件自带 Python，因此无论你安装的 Python 版本如何，只要 `bw` 的命令不变，就能继续使用。每个文件都由 GitHub Actions 从本仓库构建，可以这样验证：
 

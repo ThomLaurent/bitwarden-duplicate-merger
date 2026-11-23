@@ -50,8 +50,8 @@ This tool groups those duplicates, suggests how to merge each group, lets you ch
 1. Download **`bw-dedupe-windows-x64.exe`** from the [latest release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest).
 2. Move it to a folder of its own, for example a new `bw-dedupe` folder in Documents. Your decisions and reports are saved next to it.
 3. Double-click it. If Windows shows "Windows protected your PC", click **More info**, then **Run anyway**: the file is not signed.
-4. A black window opens. The first time, it offers to download the official Bitwarden command-line tool: press Enter.
-5. Sign in to Bitwarden in that window: email, master password, and two-step login code if you use one. Nothing shows while you type the password, that is normal.
+4. A black window opens. The first time, it offers to download the official Bitwarden command-line tool: press Enter. To look around on a made-up vault first, type `D` then Enter.
+5. Choose where your account is (bitwarden.com, bitwarden.eu or your own server), then sign in: email, master password, and two-step login code if you use one. Nothing shows while you type the password, that is normal.
 6. The review page opens in your browser.
 
 </details>
@@ -59,20 +59,12 @@ This tool groups those duplicates, suggests how to merge each group, lets you ch
 <details>
 <summary><b>macOS</b></summary>
 
-1. Download **`bw-dedupe-macos-arm64`** from the [latest release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest). It runs on Macs with an Apple chip (M1 or later); on an Intel Mac, run from source.
-2. Open the Terminal app, then run these commands one by one. The second one lets macOS start a file that is not signed.
-   ```bash
-   cd ~/Downloads
-   ```
-   ```bash
-   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
-   ```
-   ```bash
-   ./bw-dedupe-macos-arm64
-   ```
-3. The first time, the tool offers to download the official Bitwarden command-line tool: press Enter.
-4. Sign in to Bitwarden in the Terminal: email, master password, and two-step login code if you use one. Nothing shows while you type the password, that is normal.
-5. The review page opens in your browser.
+1. Download **`bw-dedupe-macos-arm64.zip`** from the [latest release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest). It runs on Macs with an Apple chip (M1 or later); on an Intel Mac, run from source.
+2. Open the zip if Safari did not already, then move `bw-dedupe-macos-arm64` to a folder of its own, for example a new `bw-dedupe` folder in Documents. Your decisions and reports are saved next to it.
+3. Double-click it. The first time, macOS refuses because the file is not signed: click **Done**, open **System Settings**, then **Privacy & Security**, scroll down and click **Open Anyway**, then confirm.
+4. A Terminal window opens. The first time, it offers to download the official Bitwarden command-line tool: press Enter. To look around on a made-up vault first, type `D` then Enter.
+5. Choose where your account is (bitwarden.com, bitwarden.eu or your own server), then sign in: email, master password, and two-step login code if you use one. Nothing shows while you type the password, that is normal.
+6. The review page opens in your browser.
 
 </details>
 
@@ -88,7 +80,7 @@ chmod +x bw-dedupe-linux-x64
 ./bw-dedupe-linux-x64
 ```
 
-The first time, the tool offers to download the official Bitwarden CLI. Sign in when `bw` asks, then review in the browser page that opens.
+The first time, the tool offers to download the official Bitwarden CLI, or to try a demo vault. Sign in when `bw` asks, then review in the browser page that opens.
 
 </details>
 
@@ -109,7 +101,7 @@ python bw_dedupe.py
 
 </details>
 
-**Try it first** on a made-up vault, without the Bitwarden CLI or an account: start it from a terminal with `--demo`, for example `python bw_dedupe.py --demo`. Nothing is saved to any vault.
+**Try it first** on a made-up vault, without the Bitwarden CLI or an account: type `D` when the tool offers to download the CLI, or start it from a terminal with `--demo` (for example `python bw_dedupe.py --demo`). Nothing is saved to any vault.
 
 Executables bundle their own Python, so they keep working whatever Python you have, as long as `bw` keeps its commands. Each one is built by GitHub Actions from this repository and can be checked with:
 

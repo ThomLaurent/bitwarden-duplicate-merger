@@ -22,8 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
+import bw_dedupe  # noqa: E402
 import demo_vault  # noqa: E402
-from bwdedupe import bwcli, server  # noqa: E402
+from bwdedupe import bwcli, server, unlock  # noqa: E402
 from bwdedupe.demo import DemoBw  # noqa: E402
 from bwdedupe.psl import registrable_domain  # noqa: E402
 from bwdedupe.state import Session  # noqa: E402
@@ -253,10 +254,38 @@ class BwCliTest(unittest.TestCase):
             self.assertIsNone(bwcli.resolve(None, False))
             with mock.patch("builtins.input", return_value="n"):
                 self.assertIsNone(bwcli.resolve(None, True))
+            with mock.patch("builtins.input", return_value="D"):
+                self.assertEqual(bwcli.resolve(None, True), bwcli.DEMO)
+            self.assertFalse(cached.exists())
             with mock.patch("builtins.input", return_value=""):
                 self.assertEqual(bwcli.resolve(None, True), str(cached))
             with mock.patch("builtins.input", side_effect=AssertionError("asked again")):
                 self.assertEqual(bwcli.resolve(None, False), str(cached))
+
+
+class UnlockTest(unittest.TestCase):
+    def test_choose_server(self):
+        cases = {("",): None, ("1",): None, ("2",): "https://vault.bitwarden.eu",
+                 ("3", "https://vault.example.com"): "https://vault.example.com", ("3", ""): None}
+        for answers, expected in cases.items():
+            bw = mock.Mock()
+            with mock.patch("sys.stdout", io.StringIO()):
+                unlock.choose_server(bw, mock.Mock(side_effect=list(answers)))
+            calls = [mock.call("config", "server", expected)] if expected else []
+            self.assertEqual(bw.run.call_args_list, calls, answers)
+
+
+class DataFolderTest(unittest.TestCase):
+    def test_double_clicked_executable_keeps_files_next_to_it(self):
+        home = Path(tempfile.gettempdir()).resolve()
+        exe = home / "tools" / "bw-dedupe"
+        with mock.patch.object(Path, "home", return_value=home), mock.patch.object(Path, "cwd", return_value=home), \
+                mock.patch.object(sys, "executable", str(exe)):
+            self.assertEqual(bw_dedupe.data_folder(), Path())
+            with mock.patch.object(sys, "frozen", True, create=True):
+                self.assertEqual(bw_dedupe.data_folder(), exe.parent)
+        with mock.patch.object(sys, "frozen", True, create=True):
+            self.assertEqual(bw_dedupe.data_folder(), Path())
 
 
 class PslTest(unittest.TestCase):

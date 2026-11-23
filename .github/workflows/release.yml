@@ -1,6 +1,7 @@
 name: release
 
-# Push a tag such as v1.0.0 to build the standalone executables and publish a release.
+# Push a tag such as v1.0.0 to build the standalone executables, publish a release and refresh the screenshots.
+# Run it by hand (Actions > release > Run workflow) to only build the executables, downloadable from the run page.
 on:
   push:
     tags: ["v*"]
@@ -19,10 +20,14 @@ jobs:
         include:
           - os: ubuntu-latest
             asset: bw-dedupe-linux-x64
+            package: bw-dedupe-linux-x64
           - os: windows-latest
             asset: bw-dedupe-windows-x64.exe
+            package: bw-dedupe-windows-x64.exe
+          # Zipped so the executable keeps its permission bit once downloaded with a browser.
           - os: macos-latest
             asset: bw-dedupe-macos-arm64
+            package: bw-dedupe-macos-arm64.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -38,13 +43,16 @@ jobs:
           src=dist/bw-dedupe; [ -f dist/bw-dedupe.exe ] && src=dist/bw-dedupe.exe
           mv "$src" "dist/${{ matrix.asset }}"
           "dist/${{ matrix.asset }}" --help
+      - name: Zip
+        if: matrix.package != matrix.asset
+        run: cd dist && zip "${{ matrix.package }}" "${{ matrix.asset }}"
       - uses: actions/attest-build-provenance@v2
         with:
-          subject-path: dist/${{ matrix.asset }}
+          subject-path: dist/${{ matrix.package }}
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset }}
-          path: dist/${{ matrix.asset }}
+          name: ${{ matrix.package }}
+          path: dist/${{ matrix.package }}
 
   release:
     needs: build
@@ -65,3 +73,42 @@ jobs:
           gh release view "$tag" --repo "$repo" > /dev/null 2>&1 \
             || gh release create "$tag" --repo "$repo" --title "$tag" --generate-notes
           gh release upload "$tag" bw-dedupe-* SHA256SUMS.txt --repo "$repo" --clobber
+
+  screenshots:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright and the Inter font
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-inter
+          mkdir -p ~/.config/fontconfig
+          cat > ~/.config/fontconfig/fonts.conf <<'EOF'
+          <?xml version="1.0"?>
+          <fontconfig>
+            <alias><family>sans-serif</family><prefer><family>Inter</family></prefer></alias>
+            <alias><family>system-ui</family><prefer><family>Inter</family></prefer></alias>
+          </fontconfig>
+          EOF
+      - name: Take the screenshots
+        run: |
+          python bw_dedupe.py --demo --no-browser > demo.log 2>&1 &
+          for _ in $(seq 30); do grep -q "Open http" demo.log && break; sleep 1; done
+          node tools/screenshots.cjs "$(grep -o 'http://[^ ]*' demo.log)" docs/screenshots
+      - name: Commit when they changed
+        run: |
+          git add docs/screenshots
+          git diff --cached --quiet && exit 0
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Update screenshots for ${{ github.ref_name }}"
+          git push origin HEAD:main

@@ -18,6 +18,7 @@ from pathlib import Path
 
 RELEASES_API = "https://api.github.com/repos/bitwarden/clients/releases?per_page=100"
 MANUAL_INSTALL = "https://bitwarden.com/help/cli/"
+DEMO = "demo"
 REFRESH_SECONDS = 30 * 24 * 3600
 # Used when the bundled OpenSSL has no default CA file on this machine (seen with frozen executables).
 CA_BUNDLES = ("/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
@@ -150,7 +151,10 @@ def refresh(exe: Path) -> None:
 
 
 def resolve(explicit: str | None, interactive: bool) -> str | None:
-    """Path of the bw executable: --bw, then PATH, then a copy downloaded earlier, then a new download."""
+    """Path of the bw executable: --bw, then PATH, then a copy downloaded earlier, then a new download.
+
+    Returns DEMO when the user picks the demo vault instead of downloading bw.
+    """
     if explicit:
         return explicit
     found = shutil.which("bw")
@@ -164,8 +168,13 @@ def resolve(explicit: str | None, interactive: bool) -> str | None:
         print(f"The Bitwarden CLI (bw) was not found. Start the tool from a terminal to download it, "
               f"install it ({MANUAL_INSTALL}), or pass --bw.", file=sys.stderr)
         return None
-    print("This tool works through the official Bitwarden command-line tool (bw), which is not installed.")
-    answer = input("Download it now from Bitwarden's official releases on GitHub? [Y/n] ").strip().lower()
+    print("This tool works through the official Bitwarden command-line tool (bw), which is not installed.\n"
+          "  Y  download it from Bitwarden's official releases on GitHub, then open your vault\n"
+          "  D  try the tool on a made-up demo vault first\n"
+          "  N  quit")
+    answer = input("Your choice [Y/d/n]: ").strip().lower()
+    if answer in ("d", "demo"):
+        return DEMO
     if answer not in ("", "y", "yes"):
         print(f"Install it yourself ({MANUAL_INSTALL}) or pass --bw <path>.", file=sys.stderr)
         return None

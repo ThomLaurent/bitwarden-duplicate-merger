@@ -47,8 +47,8 @@ Esta herramienta agrupa esos duplicados, propone una fusión para cada grupo, te
 1. Descarga **`bw-dedupe-windows-x64.exe`** desde la [última versión](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest).
 2. Muévelo a una carpeta propia, por ejemplo una nueva carpeta `bw-dedupe` en Documentos. Tus decisiones e informes se guardan a su lado.
 3. Haz doble clic en él. Si Windows muestra «Windows protegió su PC», haz clic en **Más información** y luego en **Ejecutar de todas formas**: el archivo no está firmado.
-4. Se abre una ventana negra. La primera vez, ofrece descargar la herramienta oficial de línea de comandos de Bitwarden: pulsa Intro.
-5. Inicia sesión en Bitwarden en esa ventana: correo, contraseña maestra y código de inicio de sesión en dos pasos si lo usas. No se ve nada mientras escribes la contraseña, es normal.
+4. Se abre una ventana negra. La primera vez, ofrece descargar la herramienta oficial de línea de comandos de Bitwarden: pulsa Intro. Para echar antes un vistazo con una caja fuerte ficticia, escribe `D` y pulsa Intro.
+5. Elige dónde está tu cuenta (bitwarden.com, bitwarden.eu o tu propio servidor) e inicia sesión: correo, contraseña maestra y código de inicio de sesión en dos pasos si lo usas. No se ve nada mientras escribes la contraseña, es normal.
 6. La página de revisión se abre en tu navegador.
 
 </details>
@@ -56,20 +56,12 @@ Esta herramienta agrupa esos duplicados, propone una fusión para cada grupo, te
 <details>
 <summary><b>macOS</b></summary>
 
-1. Descarga **`bw-dedupe-macos-arm64`** desde la [última versión](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest). Funciona en Mac con chip de Apple (M1 o posterior); en un Mac con Intel, ejecútalo desde el código fuente.
-2. Abre la app Terminal y ejecuta estos comandos uno a uno. El segundo permite que macOS abra un archivo sin firmar.
-   ```bash
-   cd ~/Downloads
-   ```
-   ```bash
-   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
-   ```
-   ```bash
-   ./bw-dedupe-macos-arm64
-   ```
-3. La primera vez, la herramienta ofrece descargar la herramienta oficial de línea de comandos de Bitwarden: pulsa Intro.
-4. Inicia sesión en Bitwarden en el Terminal: correo, contraseña maestra y código de inicio de sesión en dos pasos si lo usas. No se ve nada mientras escribes la contraseña, es normal.
-5. La página de revisión se abre en tu navegador.
+1. Descarga **`bw-dedupe-macos-arm64.zip`** desde la [última versión](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest). Funciona en Mac con chip de Apple (M1 o posterior); en un Mac con Intel, ejecútalo desde el código fuente.
+2. Abre el zip si Safari no lo hizo ya y mueve `bw-dedupe-macos-arm64` a una carpeta propia, por ejemplo una nueva carpeta `bw-dedupe` en Documentos. Tus decisiones e informes se guardan a su lado.
+3. Haz doble clic en él. La primera vez, macOS lo rechaza porque el archivo no está firmado: haz clic en **OK**, abre **Ajustes del Sistema**, luego **Privacidad y seguridad**, baja y haz clic en **Abrir igualmente**, y confirma.
+4. Se abre una ventana de Terminal. La primera vez, ofrece descargar la herramienta oficial de línea de comandos de Bitwarden: pulsa Intro. Para echar antes un vistazo con una caja fuerte ficticia, escribe `D` y pulsa Intro.
+5. Elige dónde está tu cuenta (bitwarden.com, bitwarden.eu o tu propio servidor) e inicia sesión: correo, contraseña maestra y código de inicio de sesión en dos pasos si lo usas. No se ve nada mientras escribes la contraseña, es normal.
+6. La página de revisión se abre en tu navegador.
 
 </details>
 
@@ -85,7 +77,7 @@ chmod +x bw-dedupe-linux-x64
 ./bw-dedupe-linux-x64
 ```
 
-La primera vez, la herramienta ofrece descargar la CLI oficial de Bitwarden. Inicia sesión cuando `bw` lo pida y revisa en la página que se abre.
+La primera vez, la herramienta ofrece descargar la CLI oficial de Bitwarden, o probar una caja fuerte de demostración. Inicia sesión cuando `bw` lo pida y revisa en la página que se abre.
 
 </details>
 
@@ -106,7 +98,7 @@ python bw_dedupe.py
 
 </details>
 
-**Pruébala antes** con una caja fuerte ficticia, sin CLI de Bitwarden ni cuenta: iníciala desde una terminal con `--demo`, por ejemplo `python bw_dedupe.py --demo`. No se guarda nada en ninguna caja fuerte.
+**Pruébala antes** con una caja fuerte ficticia, sin CLI de Bitwarden ni cuenta: escribe `D` cuando la herramienta ofrezca descargar la CLI, o iníciala desde una terminal con `--demo` (por ejemplo `python bw_dedupe.py --demo`). No se guarda nada en ninguna caja fuerte.
 
 Los ejecutables incluyen su propio Python: siguen funcionando con cualquier versión de Python que tengas, mientras `bw` mantenga sus comandos. Cada uno se compila con GitHub Actions desde este repositorio y se verifica con:
 

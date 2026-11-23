@@ -17,14 +17,15 @@ python bw_dedupe.py
 ```
 
 - If the vault is locked, `bw` asks for your master password in the terminal (and for your email and two-step login code the first time).
+- Before the first login, the tool asks where your account is: bitwarden.com, bitwarden.eu, or another server (self-hosted). It runs `bw config server` for the last two. It does not ask when `bw` already has a server set.
 - If the tool is not started from a terminal, or the vault gets locked while you work, it opens a terminal window for `bw` and gets the session key back once you are done.
-- Run it again from the same folder to resume: decisions are stored in `bw-dedupe-session.json`.
+- Run it again from the same folder to resume: decisions are stored in `bw-dedupe-session.json`, reports in `bw-dedupe-reports`. Both go to the current folder, except when the executable starts in your home folder (double-click on macOS and most Linux desktops): then they go next to the executable.
 - The vault is locked when you quit, unless `BW_SESSION` was already set or `--keep-unlocked` is passed.
-- Self-hosted servers: run `bw config server https://your.server` once before. Not tested, but the tool only uses standard `bw` commands.
+- Self-hosted servers: not tested, but the tool only uses standard `bw` commands.
 
 ### Bitwarden CLI
 
-The tool looks for `bw` in this order: `--bw <path>`, your `PATH`, then a copy it downloaded earlier. When none is found, it asks before downloading one:
+The tool looks for `bw` in this order: `--bw <path>`, your `PATH`, then a copy it downloaded earlier. When none is found, it asks before downloading one (or offers the [demo](#demo) instead):
 
 - from the newest stable `cli-v*` release of [bitwarden/clients](https://github.com/bitwarden/clients/releases) on GitHub, for your system;
 - checked against the SHA-256 that GitHub publishes for the file, or Bitwarden's own checksum file. Nothing is saved when they differ;
@@ -34,7 +35,7 @@ Once a month, the tool checks for a newer release and updates that copy the same
 
 ### Demo
 
-`--demo` starts the tool on a made-up vault, without `bw` or a Bitwarden account: to see how it works, or to audit it. Merges change the demo vault in memory only, and the work file and reports go to a temporary folder printed at start.
+`--demo`, or `D` when the tool offers to download `bw`, starts the tool on a made-up vault, without `bw` or a Bitwarden account: to see how it works, or to audit it. Merges change the demo vault in memory only, and the work file and reports go to a temporary folder printed at start.
 
 ## Review
 
@@ -114,7 +115,7 @@ Never suggested: items with several domains, organization items, items without a
 | `The Bitwarden CLI (bw) was not found` | Start the tool from a terminal so it can offer the download, install the [Bitwarden CLI](https://bitwarden.com/help/cli/) yourself, or pass `--bw <path>`. |
 | `Download failed` | No access to GitHub (proxy, firewall), or the file did not match its SHA-256. Install the [Bitwarden CLI](https://bitwarden.com/help/cli/) yourself, or pass `--bw <path>`. |
 | No terminal window opens to unlock | Start the tool from a terminal, or run `bw unlock`, set `BW_SESSION` and start it again. |
-| macOS: "cannot be opened because the developer cannot be verified" | `xattr -d com.apple.quarantine bw-dedupe-macos-arm64`, or run from source. |
+| macOS: "cannot be opened" or "Apple could not verify" | The executable is not signed. System Settings, Privacy & Security, "Open Anyway". Or in a terminal: `xattr -d com.apple.quarantine bw-dedupe-macos-arm64`. |
 | Windows SmartScreen warning | The executable is not signed. "More info", then "Run anyway", or run from source. |
 | Linux: `GLIBC_x.y not found` | Your distribution is older than the build machine: run from source. |
 | A group says "changed in vault" | An item was edited elsewhere since your review. Review it again. |

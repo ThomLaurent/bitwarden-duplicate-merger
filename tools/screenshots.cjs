@@ -1,5 +1,5 @@
-// Regenerates docs/screenshots from the demo vault. See CONTRIBUTING.md.
-// Usage: node tools/screenshots.cjs <url printed by the tool> <output dir>
+// Regenerates docs/screenshots from the demo vault. See AGENTS.md.
+// Usage: node tools/screenshots.cjs <url printed by `bw_dedupe.py --demo --no-browser`> <output dir>
 const { chromium } = require("playwright");
 
 (async () => {
@@ -9,6 +9,8 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 760 }, dev
 const shot = (name) => page.screenshot({ path: `${out}/${name}.png` });
 
 await page.goto(url);
+// The README shows the screens as users see them, without the demo badge.
+await page.addStyleTag({ content: ".tag.demo { display: none !important; }" });
 await page.waitForSelector(".row");
 await page.click('.row:has-text("amazon.fr")');
 await shot("review-rule");
