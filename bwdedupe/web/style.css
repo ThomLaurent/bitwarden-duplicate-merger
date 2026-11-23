@@ -73,6 +73,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tag.manual, .tag.rename { background: var(--chip); color: var(--fg); }
 .tag.validated { background: var(--accent-soft); color: var(--accent); }
 .tag.applied { background: var(--ok-soft); color: var(--ok); }
+.tag.demo { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
 .note { padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); margin: 8px 0; }
 .note.info { background: var(--accent-soft); color: var(--accent); }
 .note.err { background: var(--err-soft); color: var(--err); }

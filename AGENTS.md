@@ -12,6 +12,8 @@ User-facing docs: `README.md` (pitch, quick start) and `docs/USAGE.md` (full beh
 | Path | Role |
 |---|---|
 | `bw_dedupe.py` | Entry point: arguments, terminal unlock, starts the server. |
+| `bwdedupe/bwcli.py` | Finds `bw`, or downloads the official build from Bitwarden's GitHub releases (SHA-256 checked). |
+| `bwdedupe/demo.py` | Made-up vault and in-process `bw` stand-in for `--demo`, shared with the tests. |
 | `bwdedupe/vault.py` | `Bw` wrapper around the `bw` CLI, `Login` parsing, non-secret item summaries. |
 | `bwdedupe/psl.py` + `public_suffix_list.dat` | Registrable domain lookup with the bundled Public Suffix List. |
 | `bwdedupe/rules.py` | Duplicate rule, default decisions, `build_payload` for `bw edit`, `describe_differences` for the report. |
@@ -20,7 +22,7 @@ User-facing docs: `README.md` (pitch, quick start) and `docs/USAGE.md` (full beh
 | `bwdedupe/server.py` | HTTP server on 127.0.0.1, token auth, JSON API used by the UI. |
 | `bwdedupe/unlock.py` | Unlock in the terminal, or in a terminal window that posts the session key back. |
 | `bwdedupe/web/` | UI: vanilla JS (`app.js`), no build step, no external resource. |
-| `tests/` | `unittest` suite, `fake_bw.py` (stand-in CLI), `demo_vault.py` (made-up data). |
+| `tests/` | `unittest` suite, `fake_bw.py` (stand-in CLI over a JSON file), `demo_vault.py` (writes the demo vault to a file). |
 | `docs/translations/` | Translated READMEs. |
 | `tools/screenshots.cjs` | Regenerates `docs/screenshots/` with Playwright. |
 | `packaging/bw-dedupe.spec` | PyInstaller spec for the standalone executables. |
@@ -42,17 +44,19 @@ User-facing docs: `README.md` (pitch, quick start) and `docs/USAGE.md` (full beh
 5. The server binds 127.0.0.1, checks the `Host` header and the `X-Token` header, and does not log requests.
 6. Standard library only, Python 3.10+. Do not add dependencies: the tool must keep working years after download.
 7. UI code renders vault values with `textContent` (the `h()` helper), never `innerHTML`.
+8. No network access besides `bw`, except `bwcli.py`: it downloads `bw` from Bitwarden's GitHub releases only (asking first, then a monthly update) and checks the SHA-256 before saving it.
 
 ## Commands
 
 ```bash
 python -m unittest discover -s tests -v          # tests, no network, fake bw
-python tests/demo_vault.py /tmp/demo.json         # demo vault for manual runs
-FAKE_VAULT=/tmp/demo.json BW_SESSION=fake-session python bw_dedupe.py --bw ./tests/fake_bw.py
+python bw_dedupe.py --demo                        # made-up vault, in memory
+python tests/demo_vault.py /tmp/demo.json         # same vault in a file, to test the unlock flow
+FAKE_VAULT=/tmp/demo.json python bw_dedupe.py --bw ./tests/fake_bw.py   # master password: master
 pyinstaller --distpath dist packaging/bw-dedupe.spec   # standalone executable
 ```
 
-Screenshots: start the tool on the demo vault with `--no-browser`, then `node tools/screenshots.cjs <printed url> docs/screenshots` (needs `playwright`).
+Screenshots: start the tool with `--demo --no-browser`, then `node tools/screenshots.cjs <printed url> docs/screenshots` (needs `playwright`).
 
 Refresh the Public Suffix List: download https://publicsuffix.org/list/public_suffix_list.dat over `bwdedupe/public_suffix_list.dat`.
 

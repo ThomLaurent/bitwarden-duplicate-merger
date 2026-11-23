@@ -149,6 +149,7 @@ function renderTop() {
   const tab = (id, label) => h("button", { class: ui.view === id ? "on" : "", onclick: () => { ui.view = id; render(); } }, label);
   return h("header", { class: "top" },
     h("span", { class: "brand" }, "Duplicate merger"),
+    s.demo && h("span", { class: "tag demo", title: "Changes stay in memory and are lost when you quit" }, "Demo vault, made-up data"),
     h("nav", { class: "tabs" }, tab("review", `Review (${open.length})`), tab("logins", `All logins (${Object.keys(s.items).length})`),
       tab("history", `History (${s.runs.length})`)),
     h("div", { class: "progress", title: "applied / validated / total groups" },

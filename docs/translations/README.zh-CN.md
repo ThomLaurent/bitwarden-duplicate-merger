@@ -35,28 +35,83 @@
 - **未经你确认不会做任何修改**，并且只应用已确认的组。
 - **不会执行过期的计划。** 应用每个组之前，工具会向 Bitwarden 确认其中的项在你审核后没有变化。若有变化，则跳过该组并在报告中说明。
 - **可撤销。** 重复项进入 Bitwarden 回收站（保留 30 天），保留的项保持原有 ID、附件和通行密钥，应用前还会生成加密备份。
-- **仅限本地。** 页面只在 `127.0.0.1` 上提供，并使用随机令牌保护。除 `bw` 连接你的 Bitwarden 服务器外，没有任何网络访问。
-- **小巧易读。** 约 2000 行 Python 和 JavaScript，只用标准库，没有需要审计的依赖。
+- **仅限本地。** 页面只在 `127.0.0.1` 上提供，并使用随机令牌保护。除 `bw` 连接你的 Bitwarden 服务器以及下文所述的 `bw` 下载外，没有任何网络访问。
+- **官方 Bitwarden CLI。** 如果没有安装 `bw`，本工具会提议从 Bitwarden 在 GitHub 上的发布版本下载，并校验其 SHA-256。之后每月检查一次，保持这份副本为最新版本。
+- **小巧易读。** 约 2300 行 Python 和 JavaScript，只用标准库，没有需要审计的依赖。
 
 ## 快速开始
 
-1. 安装 [Bitwarden CLI](https://bitwarden.com/help/cli/)（`bw`）。
-2. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载适合你系统的可执行文件，并在终端中运行：
+<details open>
+<summary><b>Windows</b></summary>
+
+1. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-windows-x64.exe`**。
+2. 把它放进单独的文件夹，例如在“文档”中新建一个 `bw-dedupe` 文件夹。你的决定和报告会保存在它旁边。
+3. 双击运行。如果 Windows 显示“Windows 已保护你的电脑”，点击 **更多信息**，再点击 **仍要运行**：该文件没有签名。
+4. 会打开一个黑色窗口。第一次运行时，它会提议下载 Bitwarden 官方命令行工具：按回车键。
+5. 在该窗口中登录 Bitwarden：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
+6. 审核页面会在浏览器中打开。
+
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+1. 从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-macos-arm64`**。它适用于搭载 Apple 芯片（M1 或更新）的 Mac；Intel Mac 请从源码运行。
+2. 打开“终端”应用，然后逐条运行以下命令。第二条命令让 macOS 允许运行未签名的文件。
    ```bash
-   ./bw-dedupe-linux-x64
+   cd ~/Downloads
    ```
-   或者使用任意 Python 3.10+ 从源码运行，无需安装任何东西：
    ```bash
-   git clone https://github.com/ThomLaurent/bitwarden-duplicate-merger
-   cd bitwarden-duplicate-merger
-   python bw_dedupe.py
+   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
    ```
-3. 按 `bw` 的提示解锁密码库，然后在打开的页面中审核。
+   ```bash
+   ./bw-dedupe-macos-arm64
+   ```
+3. 第一次运行时，本工具会提议下载 Bitwarden 官方命令行工具：按回车键。
+4. 在终端中登录 Bitwarden：电子邮件、主密码，以及两步登录验证码（如果你启用了）。输入密码时不会显示任何字符，这是正常的。
+5. 审核页面会在浏览器中打开。
+
+</details>
+
+<details>
+<summary><b>Linux</b></summary>
+
+从 [最新版本](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) 下载 **`bw-dedupe-linux-x64`**，然后在终端中运行：
+
+```bash
+chmod +x bw-dedupe-linux-x64
+```
+```bash
+./bw-dedupe-linux-x64
+```
+
+第一次运行时，本工具会提议下载官方 Bitwarden CLI。按 `bw` 的提示登录，然后在打开的页面中审核。
+
+</details>
+
+<details>
+<summary><b>从源码运行</b>（任何装有 Python 3.10+ 的系统）</summary>
+
+无需安装任何东西：
+
+```bash
+git clone https://github.com/ThomLaurent/bitwarden-duplicate-merger
+```
+```bash
+cd bitwarden-duplicate-merger
+```
+```bash
+python bw_dedupe.py
+```
+
+</details>
+
+**先试用**一个虚构的密码库，无需 Bitwarden CLI 或账号：在终端中加上 `--demo` 启动，例如 `python bw_dedupe.py --demo`。不会向任何密码库写入内容。
 
 可执行文件自带 Python，因此无论你安装的 Python 版本如何，只要 `bw` 的命令不变，就能继续使用。每个文件都由 GitHub Actions 从本仓库构建，可以这样验证：
 
 ```bash
-gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
+gh attestation verify bw-dedupe-windows-x64.exe --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
 更多内容（英文）：[使用指南](../USAGE.md)。

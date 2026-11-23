@@ -2,7 +2,9 @@
 
 ## Start
 
-Standalone executable (nothing else to install besides `bw`):
+Step-by-step instructions for Windows, macOS and Linux are in the [README](../README.md#quick-start).
+
+Standalone executable: double-click it (Windows), or run it from a terminal:
 
 ```bash
 ./bw-dedupe-linux-x64
@@ -19,6 +21,20 @@ python bw_dedupe.py
 - Run it again from the same folder to resume: decisions are stored in `bw-dedupe-session.json`.
 - The vault is locked when you quit, unless `BW_SESSION` was already set or `--keep-unlocked` is passed.
 - Self-hosted servers: run `bw config server https://your.server` once before. Not tested, but the tool only uses standard `bw` commands.
+
+### Bitwarden CLI
+
+The tool looks for `bw` in this order: `--bw <path>`, your `PATH`, then a copy it downloaded earlier. When none is found, it asks before downloading one:
+
+- from the newest stable `cli-v*` release of [bitwarden/clients](https://github.com/bitwarden/clients/releases) on GitHub, for your system;
+- checked against the SHA-256 that GitHub publishes for the file, or Bitwarden's own checksum file. Nothing is saved when they differ;
+- saved to `%LOCALAPPDATA%\bw-dedupe` (Windows), `~/Library/Caches/bw-dedupe` (macOS) or `~/.cache/bw-dedupe` (Linux).
+
+Once a month, the tool checks for a newer release and updates that copy the same way. If the check fails, it keeps the current copy. A `bw` you installed yourself is never updated. Delete the folder to remove the downloaded copy.
+
+### Demo
+
+`--demo` starts the tool on a made-up vault, without `bw` or a Bitwarden account: to see how it works, or to audit it. Merges change the demo vault in memory only, and the work file and reports go to a temporary folder printed at start.
 
 ## Review
 
@@ -60,7 +76,8 @@ Each run writes `bw-dedupe-reports/bw-dedupe-report-<date>.html`, which opens wi
 | `--port <n>` | Local port. Default: random. |
 | `--no-browser` | Does not open the browser; open the printed link yourself. |
 | `--keep-unlocked` | Does not lock the vault when quitting. |
-| `--bw <path>` | Path of the `bw` executable. |
+| `--bw <path>` | Path of the `bw` executable. Default: found in `PATH`, or downloaded (see [Bitwarden CLI](#bitwarden-cli)). |
+| `--demo` | Made-up vault, no `bw` or account needed (see [Demo](#demo)). |
 
 ## Rule
 
@@ -94,7 +111,8 @@ Never suggested: items with several domains, organization items, items without a
 
 | Symptom | Fix |
 |---|---|
-| `bw not found in PATH` | Install the [Bitwarden CLI](https://bitwarden.com/help/cli/) or pass `--bw <path>`. |
+| `The Bitwarden CLI (bw) was not found` | Start the tool from a terminal so it can offer the download, install the [Bitwarden CLI](https://bitwarden.com/help/cli/) yourself, or pass `--bw <path>`. |
+| `Download failed` | No access to GitHub (proxy, firewall), or the file did not match its SHA-256. Install the [Bitwarden CLI](https://bitwarden.com/help/cli/) yourself, or pass `--bw <path>`. |
 | No terminal window opens to unlock | Start the tool from a terminal, or run `bw unlock`, set `BW_SESSION` and start it again. |
 | macOS: "cannot be opened because the developer cannot be verified" | `xattr -d com.apple.quarantine bw-dedupe-macos-arm64`, or run from source. |
 | Windows SmartScreen warning | The executable is not signed. "More info", then "Run anyway", or run from source. |

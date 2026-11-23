@@ -35,28 +35,83 @@ Cet outil regroupe ces doublons, propose une fusion pour chaque groupe, te laiss
 - **Rien ne change sans ta validation**, et seuls les groupes validés sont appliqués.
 - **Pas de plan périmé.** Juste avant chaque groupe, l'outil vérifie auprès de Bitwarden qu'aucun élément n'a changé depuis ta revue. Sinon le groupe est sauté et signalé.
 - **Réversible.** Les doublons vont dans la corbeille Bitwarden (30 jours), les éléments conservés gardent leur ID, pièces jointes et passkeys, et une sauvegarde chiffrée est faite avant d'appliquer.
-- **Local uniquement.** La page est servie sur `127.0.0.1` avec un jeton aléatoire. Aucun accès réseau hormis `bw` vers ton serveur Bitwarden.
-- **Petit et lisible.** Environ 2 000 lignes de Python et JavaScript, bibliothèque standard uniquement, aucune dépendance à auditer.
+- **Local uniquement.** La page est servie sur `127.0.0.1` avec un jeton aléatoire. Aucun accès réseau hormis `bw` vers ton serveur Bitwarden, et le téléchargement de `bw` ci-dessous.
+- **CLI Bitwarden officielle.** Si `bw` n'est pas installé, l'outil propose de le télécharger depuis les releases de Bitwarden sur GitHub et vérifie son SHA-256. Il tient cette copie à jour en vérifiant une fois par mois.
+- **Petit et lisible.** Environ 2 300 lignes de Python et JavaScript, bibliothèque standard uniquement, aucune dépendance à auditer.
 
 ## Démarrage rapide
 
-1. Installe la [CLI Bitwarden](https://bitwarden.com/help/cli/) (`bw`).
-2. Télécharge l'exécutable de ton système dans la [dernière release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest) et lance-le depuis un terminal :
+<details open>
+<summary><b>Windows</b></summary>
+
+1. Télécharge **`bw-dedupe-windows-x64.exe`** dans la [dernière release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest).
+2. Range-le dans un dossier à lui, par exemple un nouveau dossier `bw-dedupe` dans Documents. Tes décisions et rapports sont enregistrés à côté.
+3. Double-clique dessus. Si Windows affiche « Windows a protégé votre ordinateur », clique sur **Informations complémentaires**, puis **Exécuter quand même** : le fichier n'est pas signé.
+4. Une fenêtre noire s'ouvre. La première fois, elle propose de télécharger l'outil en ligne de commande officiel de Bitwarden : appuie sur Entrée.
+5. Connecte-toi à Bitwarden dans cette fenêtre : e-mail, mot de passe maître, et code de connexion en deux étapes si tu en utilises un. Rien ne s'affiche pendant que tu tapes le mot de passe, c'est normal.
+6. La page de revue s'ouvre dans ton navigateur.
+
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+1. Télécharge **`bw-dedupe-macos-arm64`** dans la [dernière release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest). Il fonctionne sur les Mac à puce Apple (M1 ou plus récent) ; sur un Mac Intel, lance-le depuis les sources.
+2. Ouvre l'app Terminal, puis lance ces commandes une par une. La deuxième permet à macOS de lancer un fichier non signé.
    ```bash
-   ./bw-dedupe-linux-x64
+   cd ~/Downloads
    ```
-   Ou depuis les sources avec n'importe quel Python 3.10+, rien à installer :
    ```bash
-   git clone https://github.com/ThomLaurent/bitwarden-duplicate-merger
-   cd bitwarden-duplicate-merger
-   python bw_dedupe.py
+   chmod +x bw-dedupe-macos-arm64 && xattr -d com.apple.quarantine bw-dedupe-macos-arm64
    ```
-3. Déverrouille le coffre quand `bw` le demande, puis fais ta revue dans la page qui s'ouvre.
+   ```bash
+   ./bw-dedupe-macos-arm64
+   ```
+3. La première fois, l'outil propose de télécharger l'outil en ligne de commande officiel de Bitwarden : appuie sur Entrée.
+4. Connecte-toi à Bitwarden dans le Terminal : e-mail, mot de passe maître, et code de connexion en deux étapes si tu en utilises un. Rien ne s'affiche pendant que tu tapes le mot de passe, c'est normal.
+5. La page de revue s'ouvre dans ton navigateur.
+
+</details>
+
+<details>
+<summary><b>Linux</b></summary>
+
+Télécharge **`bw-dedupe-linux-x64`** dans la [dernière release](https://github.com/ThomLaurent/bitwarden-duplicate-merger/releases/latest), puis dans un terminal :
+
+```bash
+chmod +x bw-dedupe-linux-x64
+```
+```bash
+./bw-dedupe-linux-x64
+```
+
+La première fois, l'outil propose de télécharger la CLI Bitwarden officielle. Connecte-toi quand `bw` le demande, puis fais ta revue dans la page qui s'ouvre.
+
+</details>
+
+<details>
+<summary><b>Depuis les sources</b> (tout système avec Python 3.10+)</summary>
+
+Rien à installer :
+
+```bash
+git clone https://github.com/ThomLaurent/bitwarden-duplicate-merger
+```
+```bash
+cd bitwarden-duplicate-merger
+```
+```bash
+python bw_dedupe.py
+```
+
+</details>
+
+**Essaie d'abord** sur un coffre fictif, sans CLI Bitwarden ni compte : lance-le depuis un terminal avec `--demo`, par exemple `python bw_dedupe.py --demo`. Rien n'est enregistré dans aucun coffre.
 
 Les exécutables embarquent leur propre Python : ils continuent de fonctionner quel que soit ton Python, tant que `bw` garde ses commandes. Chacun est construit par GitHub Actions depuis ce dépôt et se vérifie avec :
 
 ```bash
-gh attestation verify bw-dedupe-linux-x64 --repo ThomLaurent/bitwarden-duplicate-merger
+gh attestation verify bw-dedupe-windows-x64.exe --repo ThomLaurent/bitwarden-duplicate-merger
 ```
 
 Détails (en anglais) : [guide d'utilisation](../USAGE.md).

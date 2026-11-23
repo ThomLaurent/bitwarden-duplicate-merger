@@ -20,9 +20,10 @@ WEB_DIR = Path(__file__).with_name("web")
 
 
 class App:
-    def __init__(self, session: Session, exe: str, lock_on_quit: bool):
+    def __init__(self, session: Session, exe: str, lock_on_quit: bool, demo: bool = False):
         self.session = session
         self.exe = exe
+        self.demo = demo
         self.lock_on_quit = lock_on_quit
         self.token = secrets.token_urlsafe(32)
         self.unlock_token: str | None = None
@@ -133,6 +134,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 data = s.state()
                 data["unlockPending"] = bool(self.app.unlock_token)
                 data["unlockError"] = self.app.unlock_error
+                data["demo"] = self.app.demo
                 return self.send_json(data)
             if url.path == "/api/secret":
                 return self.send_json({"value": s.secret(query.get("item", ""), query.get("kind", ""))})

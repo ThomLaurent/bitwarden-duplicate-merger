@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import shutil
@@ -12,14 +14,17 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tests"))
 
 import demo_vault  # noqa: E402
-from bwdedupe import server  # noqa: E402
+from bwdedupe import bwcli, server  # noqa: E402
+from bwdedupe.demo import DemoBw  # noqa: E402
 from bwdedupe.psl import registrable_domain  # noqa: E402
 from bwdedupe.state import Session  # noqa: E402
 from bwdedupe.vault import Bw  # noqa: E402
@@ -160,6 +165,98 @@ class FlowTest(unittest.TestCase):
         self.assertEqual(status("/unlock-callback", data=b'{"token":"guess","session":"x"}'), 403)
         self.assertEqual(status("/../bwdedupe/state.py"), 404)
         app.httpd.shutdown()
+
+
+class DemoTest(unittest.TestCase):
+    def test_demo_vault_merges_in_memory(self):
+        folder = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, folder, ignore_errors=True)
+        s = Session(DemoBw(), folder / "work.json", folder / "reports")
+        s.open()
+        g = next(g for g in s.groups if g["domain"] == "netflix.com")
+        s.update_group(g["id"], g["decision"], "validated")
+        s.start_apply([g["id"]], True)
+        while s.progress["running"]:
+            time.sleep(0.05)
+        self.assertEqual(s.data["runs"][-1]["counts"]["stale"], 0)
+        self.assertTrue(next(i for i in s.bw.vault.items if i["id"] == "nf-2").get("deletedDate"))
+        self.assertFalse(any(i.get("deletedDate") for i in demo_vault.ITEMS))
+
+
+def bw_zip(name="bw") -> bytes:
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("README.txt", "not this one")
+        z.writestr(name, "#!/bin/sh\necho 2026.11.0\n")
+    return buf.getvalue()
+
+
+def release(tag, assets, **extra):
+    return {"tag_name": tag, "draft": False, "prerelease": False, **extra,
+            "assets": [{"name": n, "browser_download_url": f"https://dl.test/{n}", "size": 42_000_000, **a}
+                       for n, a in assets.items()]}
+
+
+class BwCliTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir, ignore_errors=True)
+        self.archive = bw_zip()
+        self.digest = "sha256:" + hashlib.sha256(self.archive).hexdigest()
+
+    def test_platforms(self):
+        self.assertEqual(bwcli.asset_platform("win32", "ARM64"), "windows")
+        self.assertEqual(bwcli.asset_platform("darwin", "arm64"), "macos-arm64")
+        self.assertEqual(bwcli.asset_platform("darwin", "x86_64"), "macos")
+        self.assertEqual(bwcli.asset_platform("linux", "aarch64"), "linux-arm64")
+        self.assertEqual(bwcli.asset_platform("linux", "x86_64"), "linux")
+
+    def test_pick_release(self):
+        releases = [
+            release("desktop-v2026.11.1", {"bw-windows-2026.11.1.zip": {"digest": self.digest}}),
+            release("cli-v2026.12.0", {"bw-windows-2026.12.0.zip": {"digest": self.digest}}, prerelease=True),
+            release("cli-v2026.11.0", {"bw-oss-windows-2026.11.0.zip": {"digest": "sha256:AA"},
+                                       "bw-windows-2026.11.0.zip": {"digest": "sha256:BB"},
+                                       "bw-linux-2026.11.0.zip": {}}),
+            release("cli-v2026.10.0", {"bw-macos-arm64-2026.10.0.zip": {"digest": "sha256:cc"}}),
+        ]
+        win = bwcli.pick_release(releases, "windows")
+        self.assertEqual((win.version, win.url, win.sha256), ("2026.11.0", "https://dl.test/bw-windows-2026.11.0.zip", "bb"))
+        self.assertEqual(bwcli.pick_release(releases, "macos-arm64").version, "2026.10.0")
+        with self.assertRaises(bwcli.DownloadError):
+            bwcli.pick_release(releases, "linux")
+        releases[2]["assets"].append({"name": "bw-linux-sha256-2026.11.0.txt", "browser_download_url": "https://dl.test/sum"})
+        with mock.patch.object(bwcli, "fetch", return_value=b"DD  bw-linux-2026.11.0.zip\n"):
+            self.assertEqual(bwcli.pick_release(releases, "linux").sha256, "dd")
+
+    def test_install_checks_the_hash(self):
+        target = self.dir / "cache" / "bw"
+        good = bwcli.Release("2026.11.0", "https://dl.test/bw.zip", self.digest[len("sha256:"):], 0)
+        with mock.patch.object(bwcli, "fetch", return_value=self.archive):
+            with self.assertRaises(bwcli.DownloadError):
+                bwcli.install(bwcli.Release("2026.11.0", good.url, "00" * 32, 0), target)
+            self.assertFalse(target.exists())
+            bwcli.install(good, target)
+        self.assertEqual(target.read_text(), "#!/bin/sh\necho 2026.11.0\n")
+        self.assertTrue(os.access(target, os.X_OK) or os.name == "nt")
+        self.assertEqual(bwcli.version_file(target).read_text(), "2026.11.0")
+
+    def test_resolve(self):
+        cached = self.dir / "bw"
+        with mock.patch.object(bwcli, "cached_exe", return_value=cached), \
+                mock.patch.object(bwcli.shutil, "which", return_value=None), \
+                mock.patch.object(bwcli, "latest_release",
+                                  return_value=bwcli.Release("2026.11.0", "u", self.digest[len("sha256:"):], 0)), \
+                mock.patch.object(bwcli, "fetch", return_value=self.archive), \
+                mock.patch("sys.stdout", io.StringIO()), mock.patch("sys.stderr", io.StringIO()):
+            self.assertEqual(bwcli.resolve("/opt/bw", False), "/opt/bw")
+            self.assertIsNone(bwcli.resolve(None, False))
+            with mock.patch("builtins.input", return_value="n"):
+                self.assertIsNone(bwcli.resolve(None, True))
+            with mock.patch("builtins.input", return_value=""):
+                self.assertEqual(bwcli.resolve(None, True), str(cached))
+            with mock.patch("builtins.input", side_effect=AssertionError("asked again")):
+                self.assertEqual(bwcli.resolve(None, False), str(cached))
 
 
 class PslTest(unittest.TestCase):
