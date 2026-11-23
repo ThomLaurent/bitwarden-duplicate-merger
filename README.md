@@ -11,7 +11,7 @@
 ![platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
 [![license](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
 
-English · [Français](docs/i18n/README.fr.md) · [Español](docs/i18n/README.es.md) · [Deutsch](docs/i18n/README.de.md) · [简体中文](docs/i18n/README.zh-CN.md)
+English · [Français](docs/translations/README.fr.md) · [Español](docs/translations/README.es.md) · [Deutsch](docs/translations/README.de.md) · [简体中文](docs/translations/README.zh-CN.md)
 
 <img src="docs/screenshots/review-conflict.png" alt="Review screen: a group of three Steam logins with two different passwords, where the user picks the item and password to keep" width="900">
 
